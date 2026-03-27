@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../api/axios';
 import { Button } from '../components/ui/Button';
 import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
+import { createInputHandler, INPUT_LIMITS } from '../utils/inputValidation';
 import './Checkout.scss';
 
 // Inicializar MP
@@ -17,7 +18,7 @@ const Checkout: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [shippingCost, setShippingCost] = useState(0); // ⚠️ TBD: Cálculo de envío real para físicos
+  const [shippingCost] = useState(0); // ⚠️ TBD: Cálculo de envío real para físicos
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,13 +47,7 @@ const Checkout: React.FC = () => {
     }
   }, [items, navigate]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
+  const handleInputChange = createInputHandler(setFormData);
 
   const handleCreateOrderAndPreference = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,19 +132,19 @@ const Checkout: React.FC = () => {
                 <div className="checkout__grid">
                   <div className="form-group">
                     <label>Nombre</label>
-                    <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} required />
+                    <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} required maxLength={INPUT_LIMITS.name} autoComplete="given-name" />
                   </div>
                   <div className="form-group">
                     <label>Apellido</label>
-                    <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} required />
+                    <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} required maxLength={INPUT_LIMITS.name} autoComplete="family-name" />
                   </div>
                   <div className="form-group">
                     <label>Email (Acá enviaremos los links de descarga o recibos)</label>
-                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} required />
+                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} required maxLength={INPUT_LIMITS.email} autoComplete="email" />
                   </div>
                   <div className="form-group">
                     <label>Teléfono</label>
-                    <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required />
+                    <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required maxLength={INPUT_LIMITS.phone} autoComplete="tel" placeholder="+54 9 11 1234-5678" />
                   </div>
                 </div>
               </section>
@@ -161,23 +156,23 @@ const Checkout: React.FC = () => {
                   <div className="checkout__grid">
                     <div className="form-group">
                       <label>Calle</label>
-                      <input type="text" name="street" value={formData.street} onChange={handleInputChange} required />
+                      <input type="text" name="street" value={formData.street} onChange={handleInputChange} required maxLength={INPUT_LIMITS.street} autoComplete="street-address" />
                     </div>
                     <div className="form-group">
                       <label>Número</label>
-                      <input type="text" name="number" value={formData.number} onChange={handleInputChange} required />
+                      <input type="text" name="number" inputMode="numeric" value={formData.number} onChange={handleInputChange} required maxLength={INPUT_LIMITS.streetNumber} />
                     </div>
                     <div className="form-group">
                       <label>Ciudad</label>
-                      <input type="text" name="city" value={formData.city} onChange={handleInputChange} required />
+                      <input type="text" name="city" value={formData.city} onChange={handleInputChange} required maxLength={INPUT_LIMITS.city} autoComplete="address-level2" />
                     </div>
                     <div className="form-group">
                       <label>Provincia</label>
-                      <input type="text" name="state" value={formData.state} onChange={handleInputChange} required />
+                      <input type="text" name="state" value={formData.state} onChange={handleInputChange} required maxLength={INPUT_LIMITS.province} autoComplete="address-level1" />
                     </div>
                     <div className="form-group">
                       <label>Código Postal</label>
-                      <input type="text" name="zip" value={formData.zip} onChange={handleInputChange} required />
+                      <input type="text" name="zip" inputMode="numeric" value={formData.zip} onChange={handleInputChange} required maxLength={INPUT_LIMITS.zip} autoComplete="postal-code" placeholder="Ej: 1234" />
                     </div>
                   </div>
                 </section>
@@ -195,11 +190,11 @@ const Checkout: React.FC = () => {
                   <div className="checkout__grid mt-4">
                     <div className="form-group">
                       <label>CUIT</label>
-                      <input type="text" name="cuit" value={formData.cuit} onChange={handleInputChange} required />
+                      <input type="text" name="cuit" value={formData.cuit} onChange={handleInputChange} required maxLength={INPUT_LIMITS.cuit} inputMode="numeric" placeholder="Ej: 20-12345678-9" />
                     </div>
                     <div className="form-group">
                       <label>Razón Social</label>
-                      <input type="text" name="businessName" value={formData.businessName} onChange={handleInputChange} required />
+                      <input type="text" name="businessName" value={formData.businessName} onChange={handleInputChange} required maxLength={INPUT_LIMITS.businessName} />
                     </div>
                   </div>
                 )}
@@ -213,16 +208,19 @@ const Checkout: React.FC = () => {
             <div className="checkout__payment-brick">
               <h2 className="checkout__section-title">Completar Pago Seguro</h2>
               <Payment
-                initialization={{ preferenceId }}
+                initialization={{ preferenceId, amount: totalConEnvio }}
                 onSubmit={onPaymentSubmit}
                 onReady={onPaymentReady}
                 onError={onPaymentError}
                 customization={{
-                  visual: {
-                    style: {
-                      theme: 'default' // MP bricks theme
-                    }
-                  }
+                  visual: { style: { theme: 'default' } },
+                  paymentMethods: {
+                    ticket: 'all',
+                    bankTransfer: 'all',
+                    creditCard: 'all',
+                    debitCard: 'all',
+                    mercadoPago: 'all',
+                  },
                 }}
               />
             </div>

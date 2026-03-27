@@ -48,8 +48,8 @@ app.use(
 );
 
 // ─── Body parsing ──────────────────────────────────────────────────────────
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // ─── Archivos estáticos (imágenes de portada, PDFs) ────────────────────────
 // Sirve la carpeta uploads en la ruta /uploads

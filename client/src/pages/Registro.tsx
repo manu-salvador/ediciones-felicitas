@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import api from '../api/axios';
+import { createInputHandler, INPUT_LIMITS } from '../utils/inputValidation';
 
 const Registro: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -17,9 +18,7 @@ const Registro: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleInputChange = createInputHandler(setFormData);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,13 +26,11 @@ const Registro: React.FC = () => {
     setLoading(true);
     
     try {
-      // 1. Registrar
       await api.post('/api/auth/register', formData);
-      // 2. Auto-login inmediato
       await login(formData.email, formData.password);
       navigate('/mi-cuenta');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al completar el registro.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Error al completar el registro.');
     } finally {
       setLoading(false);
     }
@@ -42,7 +39,7 @@ const Registro: React.FC = () => {
   return (
     <div className="container" style={{ padding: '6rem 0', maxWidth: '480px', margin: '0 auto' }}>
       <div style={{ background: '#fff', padding: '3rem', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-        <h1 style={{ fontFamily: 'Playfair Display', fontSize: '2.5rem', marginBottom: '0.5rem', color: '#1e1b30', textAlign: 'center' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', marginBottom: '0.5rem', color: '#1e1b30', textAlign: 'center' }}>
           Registro
         </h1>
         <p style={{ color: '#6e6884', textAlign: 'center', marginBottom: '2rem' }}>
@@ -59,27 +56,70 @@ const Registro: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#383450' }}>Nombre</label>
-              <input type="text" name="firstName" required onChange={handleInputChange} style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none' }} />
+              <input
+                type="text"
+                name="firstName"
+                required
+                autoComplete="given-name"
+                maxLength={INPUT_LIMITS.name}
+                onChange={handleInputChange}
+                style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none', fontFamily: 'var(--font-body)' }}
+              />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#383450' }}>Apellido</label>
-              <input type="text" name="lastName" required onChange={handleInputChange} style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none' }} />
+              <input
+                type="text"
+                name="lastName"
+                required
+                autoComplete="family-name"
+                maxLength={INPUT_LIMITS.name}
+                onChange={handleInputChange}
+                style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none', fontFamily: 'var(--font-body)' }}
+              />
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#383450' }}>Email</label>
-            <input type="email" name="email" required onChange={handleInputChange} style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none' }} />
+            <input
+              type="email"
+              name="email"
+              required
+              autoComplete="email"
+              maxLength={INPUT_LIMITS.email}
+              onChange={handleInputChange}
+              style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none', fontFamily: 'var(--font-body)' }}
+            />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#383450' }}>Teléfono</label>
-            <input type="tel" name="phone" required onChange={handleInputChange} style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none' }} />
+            <input
+              type="tel"
+              name="phone"
+              autoComplete="tel"
+              maxLength={INPUT_LIMITS.phone}
+              placeholder="Ej: +54 9 11 1234-5678"
+              onChange={handleInputChange}
+              style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none', fontFamily: 'var(--font-body)' }}
+            />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#383450' }}>Contraseña</label>
-            <input type="password" name="password" required minLength={6} onChange={handleInputChange} style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none' }} />
+            <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#383450' }}>
+              Contraseña <small style={{ color: '#9c8ea8', fontWeight: 400 }}>(mínimo 6 caracteres)</small>
+            </label>
+            <input
+              type="password"
+              name="password"
+              required
+              minLength={6}
+              maxLength={INPUT_LIMITS.password}
+              autoComplete="new-password"
+              onChange={handleInputChange}
+              style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none', fontFamily: 'var(--font-body)' }}
+            />
           </div>
 
           <Button type="submit" fullWidth size="lg" isLoading={loading} style={{ marginTop: '0.5rem' }}>

@@ -5,6 +5,7 @@ const {
 } = require('../controllers/bookController');
 const { verifyToken } = require('../middlewares/auth');
 const { uploadBookFiles } = require('../middlewares/upload');
+const { validateBook } = require('../middlewares/validate');
 
 // Todas las rutas admin requieren autenticación
 router.use(verifyToken);
@@ -16,13 +17,13 @@ router.get('/', adminGetBooks);
 router.post('/', uploadBookFiles.fields([
   { name: 'coverImage', maxCount: 1 },
   { name: 'digitalFile', maxCount: 1 },
-]), createBook);
+]), validateBook(true), createBook);
 
 // PUT /api/admin/books/:id
 router.put('/:id', uploadBookFiles.fields([
   { name: 'coverImage', maxCount: 1 },
   { name: 'digitalFile', maxCount: 1 },
-]), updateBook);
+]), validateBook(false), updateBook);
 
 // DELETE /api/admin/books/:id
 router.delete('/:id', deleteBook);

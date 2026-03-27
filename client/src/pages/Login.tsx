@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
+import { INPUT_LIMITS } from '../utils/inputValidation';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -20,7 +21,7 @@ const Login: React.FC = () => {
       await login(email, password);
       navigate('/mi-cuenta');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al iniciar sesión. Verificá tus credenciales.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Error al iniciar sesión. Verificá tus credenciales.');
     } finally {
       setLoading(false);
     }
@@ -29,7 +30,7 @@ const Login: React.FC = () => {
   return (
     <div className="container" style={{ padding: '6rem 0', maxWidth: '480px', margin: '0 auto' }}>
       <div style={{ background: '#fff', padding: '3rem', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-        <h1 style={{ fontFamily: 'Playfair Display', fontSize: '2.5rem', marginBottom: '0.5rem', color: '#1e1b30', textAlign: 'center' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', marginBottom: '0.5rem', color: '#1e1b30', textAlign: 'center' }}>
           Ingresar
         </h1>
         <p style={{ color: '#6e6884', textAlign: 'center', marginBottom: '2rem' }}>
@@ -48,9 +49,11 @@ const Login: React.FC = () => {
             <input 
               type="email" 
               required 
-              style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none' }}
+              autoComplete="email"
+              maxLength={INPUT_LIMITS.email}
+              style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none', fontFamily: 'var(--font-body)' }}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value.slice(0, INPUT_LIMITS.email))}
             />
           </div>
 
@@ -59,9 +62,11 @@ const Login: React.FC = () => {
             <input 
               type="password" 
               required 
-              style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none' }}
+              autoComplete="current-password"
+              maxLength={INPUT_LIMITS.password}
+              style={{ padding: '0.75rem 1rem', border: '1.5px solid #e4e2ec', borderRadius: '8px', width: '100%', outline: 'none', fontFamily: 'var(--font-body)' }}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value.slice(0, INPUT_LIMITS.password))}
             />
           </div>
 

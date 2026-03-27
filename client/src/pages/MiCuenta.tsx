@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
+import { createInputHandler, INPUT_LIMITS } from '../utils/inputValidation';
 import './MiCuenta.scss';
 
 const MiCuenta: React.FC = () => {
@@ -23,11 +24,7 @@ const MiCuenta: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError('');
-    setSuccess('');
-  };
+  const handleChange = createInputHandler(setFormData);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +76,8 @@ const MiCuenta: React.FC = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     required
+                    maxLength={INPUT_LIMITS.name}
+                    autoComplete="given-name"
                   />
                 </div>
                 <div className="form-item">
@@ -90,6 +89,8 @@ const MiCuenta: React.FC = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     required
+                    maxLength={INPUT_LIMITS.name}
+                    autoComplete="family-name"
                   />
                 </div>
               </div>
@@ -103,6 +104,8 @@ const MiCuenta: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  maxLength={INPUT_LIMITS.email}
+                  autoComplete="email"
                 />
               </div>
 
@@ -115,6 +118,8 @@ const MiCuenta: React.FC = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    autoComplete="tel"
+                    placeholder="+54 9 11 1234-5678"
                   />
                 </div>
                 <div className="form-item">
@@ -125,6 +130,9 @@ const MiCuenta: React.FC = () => {
                     name="address"
                     value={formData.address}
                     onChange={handleChange}
+                    maxLength={INPUT_LIMITS.address}
+                    autoComplete="street-address"
+                    placeholder="Ej: Av. Corrientes 1234, CABA"
                   />
                 </div>
               </div>
