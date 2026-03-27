@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Build outputs
+client/dist/
+client/build/
+
+# Uploads (archivos reales no se versionan)
+uploads/covers/*
+uploads/digital/*
+!uploads/covers/.gitkeep
+!uploads/digital/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Jest
+coverage/

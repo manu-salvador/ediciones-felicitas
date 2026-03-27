@@ -1,0 +1,293 @@
+.carrito {
+  padding: $space-12 0 $space-16;
+
+  &--empty {
+    @include flex-center;
+    min-height: 50vh;
+  }
+
+  &__empty-box {
+    text-align: center;
+    background: $color-white;
+    padding: $space-12;
+    border-radius: $radius-xl;
+    box-shadow: $shadow-sm;
+    max-width: 480px;
+
+    h2 {
+      font-size: $text-3xl;
+      margin-bottom: $space-4;
+    }
+
+    p {
+      color: $color-text-muted;
+      margin-bottom: $space-8;
+    }
+  }
+
+  &__header {
+    margin-bottom: $space-8;
+    padding-bottom: $space-6;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__title {
+    font-size: $text-4xl;
+    margin-bottom: $space-2;
+  }
+
+  &__subtitle {
+    color: $color-text-muted;
+    font-size: $text-lg;
+  }
+
+  &__layout {
+    display: flex;
+    flex-direction: column;
+    gap: $space-8;
+
+    @include respond-to('lg') {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+  }
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__items {
+    display: flex;
+    flex-direction: column;
+    gap: $space-6;
+  }
+
+  &__card {
+    background: $color-white;
+    border-radius: $radius-lg;
+    padding: $space-6;
+    display: flex;
+    gap: $space-6;
+    box-shadow: $shadow-sm;
+
+    @include respond-to('sm') {
+      flex-direction: row;
+    }
+    flex-direction: column;
+  }
+
+  &__card-img-wrapper {
+    width: 100px;
+    height: 150px;
+    flex-shrink: 0;
+    background: $color-gray-50;
+    border-radius: $radius-sm;
+    @include flex-center;
+    padding: $space-2;
+
+    @include respond-to('sm') {
+      width: 120px;
+      height: 180px;
+    }
+  }
+
+  &__card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    box-shadow: $shadow-sm;
+  }
+
+  &__card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: $space-4;
+    margin-bottom: $space-4;
+  }
+
+  &__card-title {
+    font-size: $text-xl;
+    margin-bottom: $space-1;
+    
+    a {
+      color: $color-gray-900;
+      text-decoration: none;
+      &:hover { color: $color-primary-600; }
+    }
+  }
+
+  &__card-author {
+    color: $color-text-muted;
+    font-size: $text-sm;
+    margin-bottom: $space-3;
+  }
+
+  &__card-badge {
+    display: inline-block;
+    font-size: $text-xs;
+    font-weight: $font-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 8px;
+    border-radius: $radius-sm;
+    background: $color-primary-50;
+    color: $color-primary-700;
+  }
+
+  &__card-price {
+    font-size: $text-xl;
+    font-weight: $font-bold;
+    font-family: $font-body;
+  }
+
+  &__card-actions {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+    .digital-qty {
+      font-size: $text-sm;
+      color: $color-text-muted;
+      background: $color-gray-50;
+      padding: $space-2 $space-4;
+      border-radius: $radius-md;
+    }
+  }
+
+  &__card-remove {
+    background: none;
+    border: none;
+    color: $color-error;
+    font-size: $text-sm;
+    font-weight: $font-medium;
+    cursor: pointer;
+    font-family: $font-body;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__clear {
+    margin-top: $space-8;
+    text-align: right;
+
+    .text-btn {
+      background: none;
+      border: none;
+      font-family: $font-body;
+      color: $color-text-muted;
+      font-size: $text-sm;
+      cursor: pointer;
+      &:hover { color: $color-error; text-decoration: underline; }
+    }
+  }
+
+  // Sidebar Summary
+  &__sidebar {
+    position: sticky;
+    top: calc(64px + #{$space-8});
+    
+    @include respond-to('lg') {
+      flex: 0 0 380px;
+    }
+  }
+
+  &__summary {
+    background: $color-gray-900;
+    color: $color-white;
+    border-radius: $radius-xl;
+    padding: $space-8;
+    box-shadow: $shadow-lg;
+  }
+
+  &__summary-title {
+    font-size: $text-xl;
+    color: $color-white;
+    margin-bottom: $space-6;
+    padding-bottom: $space-4;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  &__summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $space-4;
+    font-size: $text-base;
+    color: $color-gray-300;
+
+    &--highlight {
+      margin-top: $space-6;
+      padding-top: $space-6;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: $color-white;
+      font-weight: $font-bold;
+      margin-bottom: $space-8;
+    }
+  }
+
+  &__summary-total {
+    font-size: $text-3xl;
+    color: $color-primary-300;
+  }
+
+  &__summary-note {
+    font-size: $text-sm;
+    color: $color-gray-400;
+    margin-bottom: $space-6;
+    line-height: 1.5;
+  }
+
+  &__summary-link {
+    display: block;
+    text-align: center;
+    margin-top: $space-4;
+    color: $color-gray-300;
+    text-decoration: none;
+    font-size: $text-sm;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $color-white;
+    }
+  }
+
+  // Quantity Selector
+  .quantity-selector {
+    display: flex;
+    align-items: center;
+    background: $color-white;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    height: 40px;
+
+    button {
+      background: transparent;
+      border: none;
+      width: 32px;
+      height: 100%;
+      font-size: $text-lg;
+      cursor: pointer;
+      color: $color-gray-600;
+
+      &:hover { color: $color-gray-900; background: $color-gray-50; }
+    }
+
+    span {
+      width: 32px;
+      text-align: center;
+      font-weight: $font-medium;
+      font-size: $text-sm;
+    }
+  }
+}

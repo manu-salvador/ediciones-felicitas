@@ -1,0 +1,184 @@
+// ============================================================
+// GLOBAL STYLES — Ediciones Felicitas
+// Entry point de SCSS — importado en main.tsx
+// ============================================================
+
+// Abstracts: solo los @use van primero (regla @use de módulos Sass)
+@use './abstracts/variables' as *;
+@use './abstracts/mixins' as *;
+
+// ─── Design Tokens como CSS Custom Properties ─────────────────────────────
+// Patrón recomendado por react-frontend-expert skill:
+// Los valores de diseño se compilan desde Sass ($var) y se exponen
+// como custom properties (--var) para que estén disponibles en runtime,
+// en cualquier componente, sin depender del sistema de módulos de Sass.
+:root {
+  // Tipografía — DM Serif Display para títulos, Inter para cuerpo
+  --font-display:   'DM Serif Display', Georgia, serif;
+  --font-body:      'Inter', system-ui, -apple-system, sans-serif;
+  --font-secondary: 'Inter', system-ui, sans-serif;
+  --font-mono:      'JetBrains Mono', 'Fira Code', monospace;
+
+  // Colores de marca
+  --color-primary:    #{$color-primary-500};
+  --color-primary-dk: #{$color-primary-700};
+  --color-primary-lt: #{$color-primary-100};
+  --color-secondary:  #{$color-secondary-500};
+
+  // Superficie y texto semánticos
+  --color-bg:          #{$color-gray-50};
+  --color-surface:     #{$color-white};
+  --color-text:        #{$color-gray-900};
+  --color-text-muted:  #{$color-gray-600};
+  --color-border:      #{$color-gray-200};
+
+  // Spacing escala (4px base)
+  --space-1:  #{$space-1};
+  --space-2:  #{$space-2};
+  --space-3:  #{$space-3};
+  --space-4:  #{$space-4};
+  --space-6:  #{$space-6};
+  --space-8:  #{$space-8};
+  --space-12: #{$space-12};
+  --space-16: #{$space-16};
+
+  // Radios y sombras
+  --radius-sm:   #{$radius-sm};
+  --radius-md:   #{$radius-md};
+  --radius-lg:   #{$radius-lg};
+  --radius-full: #{$radius-full};
+  --shadow-sm:   #{$shadow-sm};
+  --shadow-md:   #{$shadow-md};
+  --shadow-lg:   #{$shadow-lg};
+
+  // Transiciones
+  --transition-fast: #{$transition-fast};
+  --transition-base: #{$transition-base};
+  --transition-slow: #{$transition-slow};
+}
+
+// ─── Dark mode (preparado, activar cuando se desee) ───────────────────────
+// [data-theme='dark'] {
+//   --color-bg:         #0f1117;
+//   --color-surface:    #1a1d27;
+//   --color-text:       #e8eaf0;
+//   --color-text-muted: #8b8fa8;
+//   --color-border:     #2d2f3d;
+// }
+
+// ─── Reset / base ──────────────────────────────────────────────────────────
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  // Usamos la custom property directamente — garantiza que
+  // la fuente funcione aunque Sass no inyecte el archivo en algún contexto.
+  font-family: var(--font-body);
+  font-size: $text-base;
+  font-weight: $font-regular;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// ─── Tipografía ────────────────────────────────────────────────────────────
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: $font-bold;
+  line-height: 1.2;
+  color: $color-gray-900;
+}
+
+h1 { font-size: $text-4xl; }
+h2 { font-size: $text-3xl; }
+h3 { font-size: $text-2xl; }
+h4 { font-size: $text-xl; }
+h5 { font-size: $text-lg; }
+h6 { font-size: $text-base; }
+
+p {
+  line-height: 1.7;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+
+  &:hover {
+    color: $color-primary-800;
+  }
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+button {
+  // Los botones heredan la fuente del body por convención
+  font-family: var(--font-body);
+}
+
+input, textarea, select {
+  font-family: var(--font-body);
+}
+
+ul, ol {
+  list-style: none;
+}
+
+// ─── Scrollbar custom (webkit) ─────────────────────────────────────────────
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: $color-gray-100;
+}
+::-webkit-scrollbar-thumb {
+  background: $color-primary-300;
+  border-radius: $radius-full;
+  &:hover { background: $color-primary-500; }
+}
+
+// ─── Utilidades globales ───────────────────────────────────────────────────
+.container {
+  @include container;
+}
+
+.sr-only {
+  @include sr-only;
+}
+
+// ─── Animaciones ───────────────────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-slow) both;
+}
+
+// Clase utilitaria para tipografía secundaria (Roboto)
+.font-secondary {
+  font-family: var(--font-secondary);
+}

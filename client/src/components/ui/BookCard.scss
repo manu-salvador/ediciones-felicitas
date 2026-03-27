@@ -1,0 +1,93 @@
+.book-card {
+  display: flex;
+  flex-direction: column;
+  background: $color-white;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  transition: transform $transition-base, box-shadow $transition-base;
+  height: 100%;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-md;
+
+    .book-card__image {
+      transform: scale(1.02);
+    }
+  }
+
+  &__image-container {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    background: $color-gray-50;
+    padding: $space-4;
+    @include flex-center;
+  }
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: $radius-sm;
+    transition: transform $transition-slow;
+    box-shadow: $shadow-sm; // Para que el libro parezca que flota sobre el fondo gris
+  }
+
+  &__badge {
+    position: absolute;
+    top: $space-3;
+    right: $space-3;
+    background: rgba(127, 78, 240, 0.9);
+    color: $color-white;
+    font-size: 10px;
+    font-weight: $font-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 8px;
+    border-radius: $radius-full;
+    backdrop-filter: blur(4px);
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    padding: $space-5;
+    flex: 1;
+    background: $color-white;
+  }
+
+  &__title {
+    font-family: $font-display;
+    font-size: $text-lg;
+    font-weight: $font-bold;
+    color: $color-gray-900;
+    text-decoration: none;
+    line-height: 1.3;
+    margin-bottom: $space-1;
+    @include truncate(2);
+
+    &:hover {
+      color: $color-primary-600;
+    }
+  }
+
+  &__author {
+    font-size: $text-sm;
+    color: $color-text-muted;
+    margin-bottom: $space-4; // Usa espacio vacío (negative space) en vez de líneas divisoras
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+  }
+
+  &__price {
+    font-size: $text-lg;
+    font-weight: $font-bold;
+    color: $color-gray-900;
+  }
+}

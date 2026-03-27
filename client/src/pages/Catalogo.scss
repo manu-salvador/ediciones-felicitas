@@ -1,0 +1,182 @@
+.catalogo {
+  padding-bottom: $space-16;
+
+  &__header {
+    background: $color-white;
+    padding: $space-12 0 $space-8;
+    margin-bottom: $space-8;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__title {
+    font-size: $text-4xl;
+    margin-bottom: $space-2;
+  }
+
+  &__subtitle {
+    font-size: $text-lg;
+    color: $color-text-muted;
+    max-width: 600px;
+  }
+
+  &__layout {
+    display: flex;
+    flex-direction: column;
+    gap: $space-8;
+
+    @include respond-to('lg') {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+  }
+
+  // Sidebar
+  &__sidebar {
+    position: sticky;
+    top: calc(64px + #{$space-8}); // Navbar height + gap
+    background: $color-white;
+    padding: $space-6;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-sm;
+    
+    @include respond-to('lg') {
+      flex: 0 0 260px;
+    }
+  }
+
+  &__filter-group {
+    margin-bottom: $space-6;
+  }
+
+  &__filter-title {
+    font-family: $font-body;
+    font-size: $text-sm;
+    font-weight: $font-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $color-gray-900;
+    margin-bottom: $space-4;
+  }
+
+  &__filter-list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+  }
+
+  &__filter-btn {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: $space-2 $space-3;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    font-family: $font-body;
+    font-size: $text-sm;
+    color: $color-text-muted;
+    transition: all $transition-fast;
+    display: flex;
+    align-items: center;
+
+    &:hover {
+      background: $color-primary-50;
+      color: $color-primary-600;
+    }
+
+    &.active {
+      background: $color-primary-50;
+      color: $color-primary-700;
+      font-weight: $font-semibold;
+
+      &::before {
+        content: '';
+        display: block;
+        width: 4px;
+        height: 16px;
+        background: $color-primary-500;
+        border-radius: $radius-full;
+        margin-right: $space-2;
+        margin-left: -$space-2;
+      }
+    }
+  }
+
+  // Main
+  &__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $space-6;
+
+    @include respond-to('md') {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include respond-to('xl') {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  &__loading, &__empty, &__error {
+    text-align: center;
+    padding: $space-16 $space-4;
+    background: $color-white;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-sm;
+    color: $color-text-muted;
+  }
+
+  &__error {
+    color: $color-error;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid $color-primary-100;
+    border-radius: 50%;
+    border-top-color: $color-primary-500;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: $space-4;
+  }
+
+  // Paginación
+  &__pagination {
+    @include flex-center;
+    gap: $space-4;
+    margin-top: $space-12;
+  }
+
+  &__page-btn {
+    padding: $space-2 $space-4;
+    border: 1px solid $color-border;
+    background: $color-white;
+    border-radius: $radius-md;
+    font-size: $text-sm;
+    font-weight: $font-medium;
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    &:hover:not(:disabled) {
+      border-color: $color-primary-500;
+      color: $color-primary-600;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: $color-gray-50;
+    }
+  }
+
+  &__page-info {
+    font-size: $text-sm;
+    color: $color-text-muted;
+  }
+}

@@ -1,0 +1,139 @@
+// ============================================================
+// PALETA DE COLORES — Ediciones Felicitas
+// Identidad visual: violeta y lila, editorial clásico/elegante
+// ============================================================
+
+// Primary — Violeta
+$color-primary-50:  #f5f0ff;
+$color-primary-100: #ede5ff;
+$color-primary-200: #dac9ff;
+$color-primary-300: #bfa2ff;
+$color-primary-400: #9e72f8;
+$color-primary-500: #7f4ef0;  // Principal
+$color-primary-600: #6b33d9;
+$color-primary-700: #5726b5;
+$color-primary-800: #492194;
+$color-primary-900: #3d1e78;
+$color-primary-950: #260d52;
+
+// Secondary — Lila
+$color-secondary-50:  #fdf4ff;
+$color-secondary-100: #fae9ff;
+$color-secondary-200: #f4d0ff;
+$color-secondary-300: #ebb3fe;
+$color-secondary-400: #dd86fc;
+$color-secondary-500: #c957f7;  // Lila principal
+$color-secondary-600: #ac3dd9;
+$color-secondary-700: #8f2db3;
+$color-secondary-800: #762592;
+$color-secondary-900: #601f77;
+
+// Neutros
+$color-white:    #ffffff;
+$color-black:    #0a0a0a;
+$color-gray-50:  #f9f9fb;
+$color-gray-100: #f1f0f5;
+$color-gray-200: #e4e2ec;
+$color-gray-300: #cbc8d8;
+$color-gray-400: #a9a5bc;
+$color-gray-500: #8a85a0;
+$color-gray-600: #6e6884;
+$color-gray-700: #524d65;
+$color-gray-800: #383450;
+$color-gray-900: #1e1b30;
+
+// Estados
+$color-success: #22c55e;
+$color-warning: #f59e0b;
+$color-error:   #ef4444;
+$color-info:    #3b82f6;
+
+// Semánticos (atajos)
+$color-bg:           $color-gray-50;
+$color-surface:      $color-white;
+$color-text:         $color-gray-900;
+$color-text-muted:   $color-gray-600;
+$color-border:       $color-gray-200;
+
+
+// ============================================================
+// TIPOGRAFÍA
+// ============================================================
+$font-display:   'DM Serif Display', Georgia, serif; // Títulos — elegante y contemporáneo
+$font-body:      'Inter', system-ui, sans-serif;      // Cuerpo — limpio y legible
+$font-secondary: 'Inter', system-ui, sans-serif;      // UI secondary
+$font-mono:      'JetBrains Mono', 'Fira Code', monospace;
+
+// Tamaños
+$text-xs:   0.75rem;   // 12px
+$text-sm:   0.875rem;  // 14px
+$text-base: 1rem;      // 16px
+$text-lg:   1.125rem;  // 18px
+$text-xl:   1.25rem;   // 20px
+$text-2xl:  1.5rem;    // 24px
+$text-3xl:  1.875rem;  // 30px
+$text-4xl:  2.25rem;   // 36px
+$text-5xl:  3rem;      // 48px
+
+// Pesos
+$font-regular:   400;
+$font-medium:    500;
+$font-semibold:  600;
+$font-bold:      700;
+
+// ============================================================
+// ESPACIADO
+// ============================================================
+$space-1:  0.25rem;
+$space-2:  0.5rem;
+$space-3:  0.75rem;
+$space-4:  1rem;
+$space-5:  1.25rem;
+$space-6:  1.5rem;
+$space-8:  2rem;
+$space-10: 2.5rem;
+$space-12: 3rem;
+$space-16: 4rem;
+$space-20: 5rem;
+$space-24: 6rem;
+
+// ============================================================
+// LAYOUT
+// ============================================================
+$container-max:    1280px;
+$container-narrow: 768px;
+
+// ============================================================
+// BORDES Y SOMBRAS
+// ============================================================
+$radius-sm:   4px;
+$radius-md:   8px;
+$radius-lg:   12px;
+$radius-xl:   16px;
+$radius-full: 9999px;
+
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+$shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.15);
+
+// Sombra con color de marca
+$shadow-primary: 0 4px 20px rgba(127, 78, 240, 0.25);
+
+// ============================================================
+// TRANSICIONES
+// ============================================================
+$transition-fast:   150ms ease;
+$transition-base:   250ms ease;
+$transition-slow:   400ms ease;
+
+// ============================================================
+// Z-INDEX
+// ============================================================
+$z-base:    0;
+$z-raised:  10;
+$z-dropdown: 100;
+$z-sticky:  200;
+$z-overlay: 300;
+$z-modal:   400;
+$z-toast:   500;

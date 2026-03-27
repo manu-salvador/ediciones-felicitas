@@ -1,0 +1,13 @@
+{
+  "name": "ediciones-felicitas",
+  "version": "1.0.0",
+  "description": "Ecommerce para la editorial Ediciones Felicitas",
+  "private": true,
+  "scripts": {
+    "dev": "cd client && npm run dev",
+    "start": "cd server && npm start",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install"
+  },
+  "author": "Manu Quintana",
+  "license": "UNLICENSED"
+}

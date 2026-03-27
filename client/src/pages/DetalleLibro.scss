@@ -1,0 +1,232 @@
+.detalle-libro {
+  padding: $space-8 0 $space-16;
+
+  // Utilidad texto error
+  .text-error { color: $color-error; }
+  .py-16 { padding: $space-16 0; }
+
+  // ─── Breadcrumbs ──────────────────────────────────────────
+  &__breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    font-size: $text-sm;
+    color: $color-text-muted;
+    margin-bottom: $space-8;
+
+    a {
+      color: inherit;
+      &:hover { color: $color-primary-600; }
+    }
+
+    .current { color: $color-gray-900; font-weight: $font-medium; }
+  }
+
+  // ─── Layout Principal ─────────────────────────────────────
+  &__layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $space-12;
+
+    @include respond-to('lg') {
+      grid-template-columns: 5fr 7fr;
+      align-items: start;
+    }
+  }
+
+  // ─── Columna Imagen ───────────────────────────────────────
+  &__image-wrapper {
+    background: $color-white;
+    padding: $space-12;
+    border-radius: $radius-xl;
+    box-shadow: $shadow-sm;
+    @include flex-center;
+    position: sticky;
+    top: calc(64px + #{$space-8}); // Navbar + padding
+  }
+
+  &__cover {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    object-fit: contain;
+    border-radius: $radius-sm;
+    box-shadow: $shadow-lg; // Curated float style
+  }
+
+  // ─── Columna Info ─────────────────────────────────────────
+  &__info-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__title {
+    font-size: $text-4xl;
+    @include respond-to('md') { font-size: $text-5xl; }
+    margin-bottom: $space-4;
+  }
+
+  &__author {
+    font-size: $text-lg;
+    color: $color-text-muted;
+    margin-bottom: $space-6;
+  }
+
+  &__price {
+    font-family: $font-body;
+    font-size: $text-3xl;
+    font-weight: $font-bold;
+    color: $color-gray-900;
+    margin-bottom: $space-6;
+  }
+
+  &__desc {
+    font-size: $text-base;
+    color: $color-gray-700;
+    margin-bottom: $space-10;
+    white-space: pre-wrap;
+  }
+
+  // ─── Formatos ─────────────────────────────────────────────
+  &__formats {
+    margin-bottom: $space-8;
+  }
+
+  &__formats-title {
+    font-size: $text-sm;
+    text-transform: uppercase;
+    font-weight: $font-bold;
+    letter-spacing: 0.05em;
+    color: $color-gray-900;
+    margin-bottom: $space-4;
+  }
+
+  &__formats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: $space-4;
+  }
+
+  .format-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: $space-4;
+    background: $color-white;
+    border: 2px solid $color-border;
+    border-radius: $radius-lg;
+    cursor: pointer;
+    transition: all $transition-fast;
+    font-family: $font-body;
+    text-align: left;
+
+    &:hover:not(.disabled) {
+      border-color: $color-primary-300;
+      background: $color-primary-50;
+    }
+
+    &.active {
+      border-color: $color-primary-500;
+      background: rgba(127, 78, 240, 0.05);
+      box-shadow: 0 0 0 1px $color-primary-500;
+    }
+
+    &.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: $color-gray-50;
+    }
+
+    &__name {
+      font-weight: $font-bold;
+      color: $color-gray-900;
+      margin-bottom: $space-1;
+    }
+
+    &__price {
+      font-size: $text-sm;
+      color: $color-text-muted;
+      margin-bottom: $space-2;
+    }
+
+    &__stock {
+      font-size: $text-xs;
+      color: $color-info;
+      background: rgba(59, 130, 246, 0.1);
+      padding: 2px 6px;
+      border-radius: $radius-sm;
+
+      .disabled & {
+        color: $color-error;
+        background: rgba(239, 68, 68, 0.1);
+      }
+    }
+  }
+
+  // ─── Acciones ─────────────────────────────────────────────
+  &__actions {
+    display: flex;
+    gap: $space-4;
+    margin-bottom: $space-12;
+    align-items: stretch;
+  }
+
+  .quantity-selector {
+    display: flex;
+    align-items: center;
+    background: $color-white;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    height: 48px;
+
+    button {
+      background: transparent;
+      border: none;
+      width: 40px;
+      height: 100%;
+      font-size: $text-lg;
+      cursor: pointer;
+      color: $color-gray-600;
+      transition: color $transition-fast;
+
+      &:hover:not(:disabled) { color: $color-gray-900; }
+      &:disabled { opacity: 0.3; cursor: not-allowed; }
+    }
+
+    span {
+      width: 32px;
+      text-align: center;
+      font-weight: $font-medium;
+    }
+  }
+
+  // ─── Specs ────────────────────────────────────────────────
+  &__specs {
+    border-top: 1px solid $color-border;
+    padding-top: $space-8;
+
+    dl {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: $space-6;
+
+      div {
+        display: flex;
+        flex-direction: column;
+        gap: $space-1;
+      }
+
+      dt {
+        font-size: $text-sm;
+        color: $color-text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      dd {
+        font-weight: $font-medium;
+        color: $color-gray-900;
+      }
+    }
+  }
+}

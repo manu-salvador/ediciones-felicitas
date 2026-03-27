@@ -1,0 +1,112 @@
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+
+  // ─── Sidebar ──────────────────────────────────────────────
+  &__sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: $color-gray-900;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  &__brand {
+    @include flex-center;
+    gap: $space-3;
+    padding: $space-6;
+    font-family: $font-display;
+    font-size: $text-lg;
+    font-weight: $font-bold;
+    color: $color-white;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+    &:hover { color: $color-primary-300; }
+  }
+
+  &__brand-ef {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, $color-primary-500, $color-secondary-500);
+    color: $color-white;
+    font-family: $font-display;
+    font-size: $text-xs;
+    font-weight: $font-bold;
+    border-radius: $radius-md;
+  }
+
+  &__nav {
+    flex: 1;
+    padding: $space-4;
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+  }
+
+  &__nav-item {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-3 $space-4;
+    border-radius: $radius-md;
+    font-size: $text-sm;
+    font-weight: $font-medium;
+    color: $color-gray-400;
+    text-decoration: none;
+    transition: background $transition-fast, color $transition-fast;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: $font-body;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: $color-white;
+    }
+
+    &.active {
+      background: rgba(127, 78, 240, 0.25);
+      color: $color-primary-300;
+    }
+  }
+
+  &__sidebar-footer {
+    padding: $space-4;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+  }
+
+  &__logout {
+    color: $color-gray-400;
+
+    &:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
+  }
+
+  // ─── Cuerpo ───────────────────────────────────────────────
+  &__body {
+    flex: 1;
+    background: $color-gray-50;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  &__main {
+    padding: $space-8;
+    max-width: 1200px;
+  }
+}

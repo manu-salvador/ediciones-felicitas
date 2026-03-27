@@ -1,0 +1,111 @@
+.ef-btn {
+  @include btn-base;
+  position: relative;
+  overflow: hidden;
+
+  // Variantes
+  &--primary {
+    background: linear-gradient(135deg, $color-primary-600, $color-primary-400);
+    color: $color-white;
+    
+    &:hover:not(:disabled) {
+      box-shadow: $shadow-primary;
+      transform: translateY(-1px);
+    }
+  }
+
+  &--secondary {
+    background: transparent;
+    color: $color-primary-600;
+    padding: $space-2 $space-4;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 2px;
+      background: $color-primary-500;
+      transition: width $transition-fast;
+    }
+
+    &:hover:not(:disabled)::after {
+      width: calc(100% - 32px);
+    }
+  }
+
+  &--ghost {
+    background: $color-white;
+    color: $color-text;
+
+    &:hover:not(:disabled) {
+      background: $color-gray-100;
+      color: $color-primary-600;
+    }
+  }
+
+  &--danger {
+    background: $color-error;
+    color: $color-white;
+
+    &:hover:not(:disabled) {
+      background: #dc2626;
+    }
+  }
+
+  // Tamaños
+  &--sm {
+    padding: $space-2 $space-4;
+    font-size: $text-xs;
+  }
+
+  &--md {
+    padding: $space-3 $space-6;
+    font-size: $text-sm;
+  }
+
+  &--lg {
+    padding: $space-4 $space-8;
+    font-size: $text-base;
+  }
+
+  &--full {
+    width: 100%;
+  }
+
+  // Loading state
+  &__spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: currentColor;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: $space-2;
+  }
+
+  &--loading {
+    color: transparent !important;
+    pointer-events: none;
+
+    .ef-btn__spinner {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      border-color: rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+    }
+    
+    &.ef-btn--secondary, &.ef-btn--ghost {
+      .ef-btn__spinner {
+        border-color: rgba(127, 78, 240, 0.2);
+        border-top-color: $color-primary-500;
+      }
+    }
+  }
+}
