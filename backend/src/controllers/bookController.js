@@ -33,11 +33,11 @@ const getBookById = async (req, res) => {
 
 const createBook = async (req, res) => {
   try {
-    const { titulo, isbn, precio, autor, categoria, imagen } = req.body;
+    const { titulo, isbn, precio, autor, categoria, imagen, tieneDigital } = req.body;
     if (!titulo || !precio) {
       return res.status(400).json({ error: 'Título y precio son obligatorios' });
     }
-    const book = await Book.create({ titulo, isbn, precio, autor, categoria, imagen });
+    const book = await Book.create({ titulo, isbn, precio, autor, categoria, imagen, tieneDigital });
     res.status(201).json(book);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
@@ -51,8 +51,8 @@ const updateBook = async (req, res) => {
   try {
     const book = await Book.findByPk(req.params.id);
     if (!book) return res.status(404).json({ error: 'Libro no encontrado' });
-    const { titulo, isbn, precio, autor, categoria, imagen, activo } = req.body;
-    await book.update({ titulo, isbn, precio, autor, categoria, imagen, activo });
+    const { titulo, isbn, precio, autor, categoria, imagen, activo, tieneDigital } = req.body;
+    await book.update({ titulo, isbn, precio, autor, categoria, imagen, activo, tieneDigital });
     res.json(book);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {

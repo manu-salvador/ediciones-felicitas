@@ -27,6 +27,10 @@ const Book = sequelize.define('Book', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  tieneDigital: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
   activo: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,

@@ -14,19 +14,19 @@ export default function BookDetailPage() {
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [edition, setEdition] = useState('fisico');
   const { addToCart } = useCart();
 
   useEffect(() => {
     api.get(`/books/${id}`)
-      .then(({ data }) => setBook(data))
+      .then(({ data }) => { setBook(data); setAdded(false); setQty(1); setEdition('fisico'); })
       .catch(() => setBook(null))
       .finally(() => setLoading(false));
   }, [id]);
 
   const handleAddToCart = () => {
-    addToCart(book, qty);
+    addToCart({ ...book, edicion: edition }, qty);
     setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
   };
 
   if (loading) return <><Navbar /><div className="pt-24"><Spinner /></div></>;
@@ -58,10 +58,9 @@ export default function BookDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-20 items-start">
-          {/* Book Cover */}
-          <div className="lg:col-span-5 relative group">
-            <div className="absolute -inset-4 bg-primary/5 rounded-xl -rotate-2 group-hover:rotate-0 transition-transform duration-700" />
-            <div className="relative bg-surface-low p-8 shadow-2xl shadow-primary/10 rounded-sm">
+          {/* Book Cover — fix #2: sin rotate/hover */}
+          <div className="lg:col-span-5">
+            <div className="bg-surface-low p-8 shadow-2xl shadow-primary/10 rounded-lg">
               {book.imagen ? (
                 <img
                   src={book.imagen}
@@ -80,27 +79,22 @@ export default function BookDetailPage() {
 
           {/* Content Column */}
           <div className="lg:col-span-7 flex flex-col">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 mb-6">
-              <div>
-                {book.categoria && (
-                  <span className="inline-block py-1 px-3 bg-tertiary-fixed/60 text-on-tertiary-container text-[10px] font-bold tracking-widest uppercase rounded-full mb-4">
-                    {book.categoria}
-                  </span>
-                )}
-                <h1 className="font-headline text-4xl md:text-5xl font-bold text-on-surface leading-tight tracking-tight mb-3">
-                  {book.titulo}
-                </h1>
-                {book.autor && (
-                  <p className="font-headline italic text-xl text-secondary opacity-80">{book.autor}</p>
-                )}
-              </div>
-              <div className="md:text-right flex-shrink-0">
-                <div className="font-headline text-4xl font-bold text-on-surface">{formatPeso(book.precio)}</div>
-                <div className="text-[10px] text-tertiary tracking-widest uppercase mt-1">IVA incluido</div>
-              </div>
+            {/* Title + author (sin precio acá — fix #4) */}
+            <div className="mb-6">
+              {book.categoria && (
+                <span className="inline-block py-1 px-3 bg-tertiary-fixed/60 text-on-tertiary-container text-[10px] font-bold tracking-widest uppercase rounded-full mb-4">
+                  {book.categoria}
+                </span>
+              )}
+              <h1 className="font-headline text-4xl md:text-5xl font-bold text-on-surface leading-tight tracking-tight mb-3">
+                {book.titulo}
+              </h1>
+              {book.autor && (
+                <p className="font-headline italic text-xl text-secondary opacity-80">{book.autor}</p>
+              )}
             </div>
 
-            <div className="h-px bg-outline-variant/20 my-6" />
+            <div className="h-px bg-outline-variant/20 my-4" />
 
             {/* Meta info */}
             <div className="flex flex-wrap gap-8 mb-8">
@@ -120,43 +114,87 @@ export default function BookDetailPage() {
               </div>
             </div>
 
-            {/* Purchase section */}
+            {/* Purchase section — precio adentro (fix #4) */}
             <div className="bg-surface-low p-8 rounded-xl border border-outline-variant/10">
-              <div className="flex flex-col sm:flex-row gap-8 items-start sm:items-end">
-                {/* Quantity */}
+              {/* Precio */}
+              <div className="flex items-baseline justify-between mb-6">
                 <div>
-                  <label className="block text-[10px] font-bold text-tertiary uppercase tracking-widest mb-3">Cantidad</label>
-                  <div className="flex items-center border-2 border-outline-variant/30 rounded-full p-1">
-                    <button
-                      onClick={() => setQty((q) => Math.max(1, q - 1))}
-                      className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors text-on-surface"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    </button>
-                    <span className="font-headline text-xl font-bold w-10 text-center">{qty}</span>
-                    <button
-                      onClick={() => setQty((q) => q + 1)}
-                      className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors text-on-surface"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    </button>
-                  </div>
+                  <div className="font-headline text-4xl font-bold text-on-surface">{formatPeso(book.precio)}</div>
+                  <div className="text-[10px] text-tertiary tracking-widest uppercase mt-1">IVA incluido</div>
                 </div>
               </div>
 
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+              {/* Edition selector — fix #3: solo si tieneDigital */}
+              {book.tieneDigital && (
+                <div className="mb-6">
+                  <label className="block text-[10px] font-bold text-tertiary uppercase tracking-widest mb-3">Edición</label>
+                  <div className="flex bg-surface-high p-1 rounded-full max-w-xs">
+                    <button
+                      onClick={() => setEdition('fisico')}
+                      className={`flex-1 py-3 px-6 rounded-full text-xs font-bold transition-all ${edition === 'fisico' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface-variant hover:text-primary'}`}
+                    >
+                      Edición Física
+                    </button>
+                    <button
+                      onClick={() => setEdition('digital')}
+                      className={`flex-1 py-3 px-6 rounded-full text-xs font-bold transition-all ${edition === 'digital' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface-variant hover:text-primary'}`}
+                    >
+                      Edición Digital
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Quantity */}
+              <div className="mb-8">
+                <label className="block text-[10px] font-bold text-tertiary uppercase tracking-widest mb-3">Cantidad</label>
+                <div className="flex items-center border-2 border-outline-variant/30 rounded-full p-1 w-fit">
+                  <button
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    disabled={added}
+                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors text-on-surface disabled:opacity-40"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                  <span className="font-headline text-xl font-bold w-10 text-center">{qty}</span>
+                  <button
+                    onClick={() => setQty((q) => q + 1)}
+                    disabled={added}
+                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors text-on-surface disabled:opacity-40"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Buttons — fix #5 */}
+              {!added ? (
                 <button
                   onClick={handleAddToCart}
-                  className="flex-grow bg-primary text-on-primary font-bold py-5 px-8 rounded-full flex items-center justify-center gap-3 hover:shadow-xl hover:shadow-primary/20 active:scale-95 transition-all"
+                  className="w-full bg-primary text-on-primary font-bold py-5 px-8 rounded-full flex items-center justify-center gap-3 hover:shadow-xl hover:shadow-primary/20 active:scale-95 transition-all"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
                   </svg>
-                  <span className="tracking-widest uppercase text-sm">
-                    {added ? 'Agregado!' : 'Agregar al carrito'}
-                  </span>
+                  <span className="tracking-widest uppercase text-sm">Agregar al carrito</span>
                 </button>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  <Link
+                    to="/carrito"
+                    className="w-full bg-primary text-on-primary font-bold py-5 px-8 rounded-full flex items-center justify-center gap-3 hover:shadow-xl hover:shadow-primary/20 active:scale-95 transition-all"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    <span className="tracking-widest uppercase text-sm">Ir al carrito para finalizar compra</span>
+                  </Link>
+                  <Link
+                    to="/"
+                    className="w-full border border-outline-variant text-on-surface-variant font-medium py-4 px-8 rounded-full flex items-center justify-center gap-2 hover:bg-surface-low transition-colors text-sm"
+                  >
+                    Seguir viendo el catálogo
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Trust signals */}
