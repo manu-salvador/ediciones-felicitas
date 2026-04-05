@@ -10,17 +10,10 @@ export default function Navbar() {
     <header className="fixed top-0 z-50 w-full bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
       <nav className="flex justify-between items-center w-full px-8 py-4 max-w-screen-xl mx-auto">
         <Link to="/" className="flex items-center gap-3">
-          <img src="/logo-ef.png" alt="Ediciones Felicitas" className="h-14" />
+          <img src="/logo-ef.png" alt="Ediciones Felicitas" className="h-20" />
         </Link>
 
         <div className="flex items-center gap-6">
-          <Link
-            to="/"
-            className="hidden md:block text-on-surface-variant hover:text-primary font-medium transition-colors font-headline text-sm tracking-tight"
-          >
-            Catálogo
-          </Link>
-
           {/* Cart */}
           <Link to="/carrito" className="text-on-surface-variant hover:text-primary transition-colors relative">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

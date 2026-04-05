@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { useCart } from '../context/CartContext';
+import { useUser } from '../context/UserContext';
 
 const formatPeso = (n) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
@@ -82,14 +83,85 @@ function ConfirmModal({ title, message, confirmLabel, confirmClass, onConfirm, o
   );
 }
 
+function AddressModal({ onConfirm, onCancel }) {
+  const [direccion, setDireccion] = useState('');
+  const [guardar, setGuardar] = useState(true);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-surface rounded-2xl shadow-2xl p-8 max-w-md w-full">
+        <div className="flex items-center gap-3 mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <h3 className="text-xl font-headline text-on-surface">Dirección de envío</h3>
+        </div>
+        <p className="text-on-surface-variant text-sm mb-6">Necesitamos tu dirección para calcular el envío y confirmar el pedido.</p>
+        <textarea
+          value={direccion}
+          onChange={(e) => setDireccion(e.target.value)}
+          rows={3}
+          className="w-full border border-outline-variant rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-none mb-4"
+          placeholder="Calle, número, piso/depto — Ciudad, Provincia"
+          autoFocus
+        />
+        <label className="flex items-center gap-2 text-sm text-on-surface-variant mb-8 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={guardar}
+            onChange={(e) => setGuardar(e.target.checked)}
+            className="accent-primary"
+          />
+          Guardar como mi dirección predeterminada
+        </label>
+        <div className="flex gap-3 justify-end">
+          <button onClick={onCancel} className="px-6 py-3 text-sm font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors">
+            Cancelar
+          </button>
+          <button
+            onClick={() => direccion.trim() && onConfirm(direccion.trim(), guardar)}
+            disabled={!direccion.trim()}
+            className="px-6 py-3 text-sm font-bold uppercase tracking-widest bg-primary text-on-primary rounded-full hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all disabled:opacity-40"
+          >
+            Continuar al pago
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CartPage() {
   const { items, updateQty, removeItem, clearCart, totalPrice } = useCart();
+  const { user, isLoggedIn, updateProfile } = useUser();
   const [showClearModal, setShowClearModal] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+
+  const handleCheckoutClick = () => {
+    if (isLoggedIn && !user?.direccion) {
+      setShowAddressModal(true);
+    } else {
+      setShowCheckoutModal(true);
+    }
+  };
+
+  const handleAddressConfirm = async (direccion, guardar) => {
+    if (guardar && updateProfile) {
+      try { await updateProfile({ direccion }); } catch (_) { /* no bloqueamos el flujo */ }
+    }
+    setShowAddressModal(false);
+    setShowCheckoutModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-surface">
       <Navbar />
+
+      {showAddressModal && (
+        <AddressModal
+          onConfirm={handleAddressConfirm}
+          onCancel={() => setShowAddressModal(false)}
+        />
+      )}
 
       {showClearModal && (
         <ConfirmModal
@@ -176,7 +248,7 @@ export default function CartPage() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowCheckoutModal(true)}
+                  onClick={handleCheckoutClick}
                   className="w-full py-5 bg-primary text-on-primary rounded-full font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all"
                 >
                   Finalizar Compra

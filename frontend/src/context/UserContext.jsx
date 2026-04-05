@@ -35,6 +35,14 @@ export function UserProvider({ children }) {
     return data;
   };
 
+  const updateProfile = async (fields) => {
+    const { data } = await api.put('/users/me', fields, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setUser(data);
+    return data;
+  };
+
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
@@ -42,7 +50,7 @@ export function UserProvider({ children }) {
   };
 
   return (
-    <UserContext.Provider value={{ user, token, loading, isLoggedIn: !!user, register, login, logout }}>
+    <UserContext.Provider value={{ user, token, loading, isLoggedIn: !!user, register, login, logout, updateProfile }}>
       {children}
     </UserContext.Provider>
   );
