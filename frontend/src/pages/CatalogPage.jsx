@@ -126,6 +126,18 @@ export default function CatalogPage() {
               {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
+
+          {/* Active genre pill — below search bar */}
+          {categoria && (
+            <div className="flex justify-center mt-4">
+              <span className="inline-flex items-center gap-2 bg-primary/15 text-primary text-sm font-semibold px-5 py-2.5 rounded-full">
+                <span>Género: {categoria}</span>
+                <button onClick={() => setCategoria('')} className="hover:text-primary/60 transition-colors" aria-label="Quitar filtro">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -139,17 +151,6 @@ export default function CatalogPage() {
           <span className="text-on-surface-variant text-sm">{filtered.length} libro{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
-        {categoria && (
-          <div className="flex items-center gap-2 mb-8">
-            <span className="text-xs text-on-surface-variant">Filtrando por:</span>
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-3 py-1.5 rounded-full">
-              {categoria}
-              <button onClick={() => setCategoria('')} className="hover:text-primary/60 transition-colors" aria-label="Quitar filtro">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </span>
-          </div>
-        )}
 
         {loading ? (
           <Spinner />
