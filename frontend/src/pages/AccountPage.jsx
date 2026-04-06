@@ -248,7 +248,7 @@ export default function AccountPage() {
     <div className="min-h-screen bg-surface">
       <Navbar />
 
-      <main className="max-w-screen-xl mx-auto px-8 py-16 pt-28">
+      <main className="max-w-screen-xl mx-auto px-8 py-16 pt-36">
         <header className="mb-10">
           <p className="text-tertiary font-bold tracking-widest uppercase text-xs mb-1">Mi cuenta</p>
           <h1 className="text-4xl font-headline text-on-surface tracking-tight">

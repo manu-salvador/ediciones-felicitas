@@ -45,7 +45,7 @@ export default function BookDetailPage() {
     <div className="min-h-screen bg-surface">
       <Navbar />
 
-      <main className="pt-28 pb-24 px-6 md:px-12 max-w-screen-xl mx-auto">
+      <main className="pt-36 pb-24 px-6 md:px-12 max-w-screen-xl mx-auto">
         {/* Breadcrumb */}
         <div className="mb-10 flex items-center gap-2 text-xs tracking-widest uppercase text-tertiary">
           <Link to="/" className="hover:text-primary transition-colors">Catálogo</Link>

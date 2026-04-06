@@ -68,7 +68,7 @@ export default function CatalogPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="pt-20 bg-surface-low">
+      <section className="pt-28 bg-surface-low">
         <div className="max-w-screen-xl mx-auto px-8 py-20 text-center">
           <h1 className="text-5xl md:text-6xl font-headline font-bold text-primary tracking-tight leading-tight mb-4">
             Ediciones Felicitas

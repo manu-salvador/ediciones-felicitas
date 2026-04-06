@@ -3,11 +3,14 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { useCart } from '../context/CartContext';
 import { useUser } from '../context/UserContext';
+import { sanitize } from '../utils/sanitize';
 
 const formatPeso = (n) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
 
 function CartItem({ item, onUpdateQty, onRemove }) {
+  const [confirmDel, setConfirmDel] = useState(false);
+
   return (
     <div className="flex flex-col md:flex-row gap-6 items-start group py-8 border-b border-outline-variant/20 last:border-b-0">
       {/* Cover */}
@@ -44,14 +47,22 @@ function CartItem({ item, onUpdateQty, onRemove }) {
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
           </div>
-          {/* Remove */}
-          <button
-            onClick={() => onRemove(item.bookId)}
-            className="flex items-center gap-2 text-on-surface-variant hover:text-error transition-colors text-xs uppercase tracking-widest font-semibold"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            Eliminar
-          </button>
+          {/* Remove — con confirmación inline */}
+          {!confirmDel ? (
+            <button
+              onClick={() => setConfirmDel(true)}
+              className="flex items-center gap-2 text-on-surface-variant hover:text-error transition-colors text-xs uppercase tracking-widest font-semibold"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Eliminar
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-on-surface-variant font-medium">¿Eliminar?</span>
+              <button onClick={() => onRemove(item.bookId)} className="font-bold text-error hover:underline uppercase tracking-widest">Sí</button>
+              <button onClick={() => setConfirmDel(false)} className="font-bold text-on-surface-variant hover:text-on-surface uppercase tracking-widest">No</button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -83,43 +94,78 @@ function ConfirmModal({ title, message, confirmLabel, confirmClass, onConfirm, o
   );
 }
 
-function AddressModal({ onConfirm, onCancel }) {
-  const [direccion, setDireccion] = useState('');
+function AddressModal({ user, isAllDigital, onConfirm, onCancel }) {
+  const savedAddress = user?.direccion || '';
+  const [useNew, setUseNew] = useState(!savedAddress);
+  const [nueva, setNueva] = useState('');
   const [guardar, setGuardar] = useState(true);
+
+  const addressToUse = useNew ? nueva.trim() : savedAddress;
+  const canContinue = isAllDigital || !!addressToUse;
+
+  const handleConfirm = () => {
+    if (!canContinue) return;
+    onConfirm(isAllDigital ? null : addressToUse, useNew && guardar);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-surface rounded-2xl shadow-2xl p-8 max-w-md w-full">
-        <div className="flex items-center gap-3 mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <h3 className="text-xl font-headline text-on-surface">Dirección de envío</h3>
+      <div className="bg-surface rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+        <div className="flex items-center gap-2 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            {isAllDigital
+              ? <><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></>
+              : <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>}
+          </svg>
+          <h3 className="text-lg font-headline text-on-surface">
+            {isAllDigital ? 'Confirmar compra digital' : 'Dirección de envío'}
+          </h3>
         </div>
-        <p className="text-on-surface-variant text-sm mb-6">Necesitamos tu dirección para calcular el envío y confirmar el pedido.</p>
-        <textarea
-          value={direccion}
-          onChange={(e) => setDireccion(e.target.value)}
-          rows={3}
-          className="w-full border border-outline-variant rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-none mb-4"
-          placeholder="Calle, número, piso/depto — Ciudad, Provincia"
-          autoFocus
-        />
-        <label className="flex items-center gap-2 text-sm text-on-surface-variant mb-8 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={guardar}
-            onChange={(e) => setGuardar(e.target.checked)}
-            className="accent-primary"
-          />
-          Guardar como mi dirección predeterminada
-        </label>
-        <div className="flex gap-3 justify-end">
-          <button onClick={onCancel} className="px-6 py-3 text-sm font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors">
+
+        {isAllDigital ? (
+          <p className="text-sm text-on-surface-variant mb-6">
+            Estás comprando una edición digital. El enlace de descarga se enviará a <strong>{user?.email}</strong>.
+          </p>
+        ) : savedAddress && !useNew ? (
+          <div className="mb-4">
+            <p className="text-xs text-outline uppercase tracking-widest font-bold mb-2">Enviar a</p>
+            <div className="bg-surface-low rounded-lg px-4 py-3 text-sm text-on-surface flex items-start justify-between gap-3">
+              <span>{savedAddress}</span>
+              <button onClick={() => setUseNew(true)} className="text-primary text-xs font-bold hover:underline flex-shrink-0">Cambiar</button>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4">
+            {savedAddress && (
+              <button onClick={() => setUseNew(false)} className="text-xs text-primary font-bold hover:underline mb-2 block">
+                ← Usar dirección guardada
+              </button>
+            )}
+            <input
+              value={nueva}
+              onChange={(e) => setNueva(sanitize(e.target.value))}
+              maxLength={200}
+              className="w-full border border-outline-variant rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+              placeholder="Calle, número, depto — Ciudad, Provincia"
+              autoFocus
+            />
+            {user && (
+              <label className="flex items-center gap-2 text-xs text-on-surface-variant mt-2 cursor-pointer">
+                <input type="checkbox" checked={guardar} onChange={(e) => setGuardar(e.target.checked)} className="accent-primary" />
+                Guardar como dirección predeterminada
+              </label>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2 justify-end mt-4">
+          <button onClick={onCancel} className="px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors">
             Cancelar
           </button>
           <button
-            onClick={() => direccion.trim() && onConfirm(direccion.trim(), guardar)}
-            disabled={!direccion.trim()}
-            className="px-6 py-3 text-sm font-bold uppercase tracking-widest bg-primary text-on-primary rounded-full hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all disabled:opacity-40"
+            onClick={handleConfirm}
+            disabled={!canContinue}
+            className="px-5 py-2.5 text-xs font-bold uppercase tracking-widest bg-primary text-on-primary rounded-full hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all disabled:opacity-40"
           >
             Continuar al pago
           </button>
@@ -136,12 +182,16 @@ export default function CartPage() {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
 
+  // Verdadero si TODOS los items del carrito son edición digital
+  const isAllDigital = items.length > 0 && items.every((i) => i.edicion === 'digital');
+
   const handleCheckoutClick = () => {
-    if (isLoggedIn && !user?.direccion) {
-      setShowAddressModal(true);
-    } else {
-      setShowCheckoutModal(true);
-    }
+    // Digital: no hace falta dirección física
+    if (isAllDigital) { setShowAddressModal(true); return; }
+    // Logueado y con dirección: ir al modal de confirmación directamente
+    if (isLoggedIn && user?.direccion) { setShowCheckoutModal(true); return; }
+    // Sin dirección guardada: pedirla
+    setShowAddressModal(true);
   };
 
   const handleAddressConfirm = async (direccion, guardar) => {
@@ -158,6 +208,8 @@ export default function CartPage() {
 
       {showAddressModal && (
         <AddressModal
+          user={user}
+          isAllDigital={isAllDigital}
           onConfirm={handleAddressConfirm}
           onCancel={() => setShowAddressModal(false)}
         />
@@ -185,7 +237,7 @@ export default function CartPage() {
         />
       )}
 
-      <main className="max-w-screen-xl mx-auto px-8 py-16 pt-28">
+      <main className="max-w-screen-xl mx-auto px-8 py-16 pt-36">
         <header className="mb-12">
           <h1 className="text-4xl md:text-5xl font-headline text-on-surface tracking-tight italic">Tu Carrito de Lectura</h1>
           <p className="text-on-surface-variant mt-2 max-w-lg">
