@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Spinner from '../components/ui/Spinner';
 import ErrorPage from './ErrorPage';
@@ -63,11 +63,12 @@ function BookCard({ book }) {
 }
 
 export default function CatalogPage() {
+  const [searchParams] = useSearchParams();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [search, setSearch] = useState('');
-  const [categoria, setCategoria] = useState('');
+  const [categoria, setCategoria] = useState(searchParams.get('categoria') || '');
 
   const fetchBooks = useCallback(() => {
     setLoading(true);

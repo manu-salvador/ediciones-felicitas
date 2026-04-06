@@ -52,7 +52,7 @@ export default function BookDetailPage() {
           <span className="text-[10px]">/</span>
           {book.categoria && (
             <>
-              <span>{book.categoria}</span>
+              <Link to={`/?categoria=${encodeURIComponent(book.categoria)}`} className="hover:text-primary transition-colors">{book.categoria}</Link>
               <span className="text-[10px]">/</span>
             </>
           )}
