@@ -39,7 +39,17 @@ const createOrder = async (req, res) => {
       userId,
     });
 
-    await Promise.all(items.map(i => OrderItem.create({
+    // Fetch archivoDigital for digital items
+    const itemsWithFiles = await Promise.all(items.map(async (i) => {
+      let archivoDigital = null;
+      if (i.edicion === 'digital' && i.bookId) {
+        const book = await Book.findByPk(i.bookId);
+        archivoDigital = book?.archivoDigital || null;
+      }
+      return { ...i, archivoDigital };
+    }));
+
+    await Promise.all(itemsWithFiles.map(i => OrderItem.create({
       orderId: order.id,
       bookId: i.bookId,
       titulo: i.titulo,
@@ -47,6 +57,7 @@ const createOrder = async (req, res) => {
       precio: Number(i.precio),
       qty: i.qty,
       edicion: i.edicion,
+      archivoDigital: i.archivoDigital,
     })));
 
     // Create MP preference
@@ -74,7 +85,8 @@ const createOrder = async (req, res) => {
           failure: `${frontendUrl}/pago/fallido`,
           pending: `${frontendUrl}/pago/pendiente`,
         },
-        auto_return: 'approved',
+        // auto_return solo funciona con URLs públicas (no localhost)
+        // En producción descomentar: auto_return: 'approved',
         notification_url: `${backendUrl}/api/orders/webhook`,
         external_reference: `ORDER-${order.id}`,
         statement_descriptor: 'Ediciones Felicitas',
@@ -165,4 +177,21 @@ const getMyOrders = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, handleWebhook, getAdminOrders, getMyOrders };
+// PATCH /api/orders/:id/status — admin: update order status manually
+const updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const allowed = ['pending', 'approved', 'in_process', 'rejected', 'cancelled', 'shipped', 'delivered'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ error: 'Estado inválido' });
+    }
+    const order = await Order.findByPk(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
+    await order.update({ status });
+    res.json(order);
+  } catch {
+    res.status(500).json({ error: 'Error al actualizar el estado' });
+  }
+};
+
+module.exports = { createOrder, handleWebhook, getAdminOrders, getMyOrders, updateOrderStatus };

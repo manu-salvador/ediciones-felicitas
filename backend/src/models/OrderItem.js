@@ -9,6 +9,7 @@ const OrderItem = sequelize.define('OrderItem', {
   precio: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
   qty: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
   edicion: { type: DataTypes.STRING, allowNull: false, defaultValue: 'fisico' }, // 'fisico','digital'
+  archivoDigital: { type: DataTypes.STRING, allowNull: true },
 });
 
 module.exports = OrderItem;

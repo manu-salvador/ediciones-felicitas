@@ -11,6 +11,8 @@ function StatusBadge({ status }) {
     approved:   { label: 'Aprobado',   cls: 'bg-green-100 text-green-700' },
     pending:    { label: 'Pendiente',  cls: 'bg-amber-100 text-amber-700' },
     in_process: { label: 'En proceso', cls: 'bg-blue-100 text-blue-700' },
+    shipped:    { label: 'Enviado',    cls: 'bg-blue-100 text-blue-700' },
+    delivered:  { label: 'Entregado',  cls: 'bg-green-100 text-green-700' },
     rejected:   { label: 'Rechazado',  cls: 'bg-error/10 text-error' },
     cancelled:  { label: 'Cancelado',  cls: 'bg-surface-high text-on-surface-variant' },
   };
@@ -22,7 +24,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function OrderRow({ order }) {
+function OrderRow({ order, onStatusChange }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -131,6 +133,28 @@ function OrderRow({ order }) {
                     ))}
                   </tbody>
                 </table>
+                {/* Status actions for physical/mixed orders */}
+                {['fisico', 'mixto'].includes(order.tipoEntrega) && (
+                  <div className="mt-4 pt-3 border-t border-outline-variant/10 flex flex-wrap gap-2">
+                    <span className="text-[10px] uppercase tracking-widest text-outline font-bold self-center mr-2">Actualizar estado:</span>
+                    {order.status === 'approved' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onStatusChange(order.id, 'shipped'); }}
+                        className="px-3 py-1.5 text-xs font-bold bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+                      >
+                        Marcar como enviado
+                      </button>
+                    )}
+                    {order.status === 'shipped' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onStatusChange(order.id, 'delivered'); }}
+                        className="px-3 py-1.5 text-xs font-bold bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
+                      >
+                        Marcar como entregado
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </td>
@@ -140,11 +164,12 @@ function OrderRow({ order }) {
   );
 }
 
-const FILTERS = ['Todos', 'Aprobados', 'Pendientes', 'Rechazados'];
+const FILTERS = ['Todos', 'Aprobados', 'Pendientes', 'Enviados', 'Rechazados'];
 const FILTER_STATUS = {
   Todos: null,
   Aprobados: 'approved',
   Pendientes: 'pending',
+  Enviados: 'shipped',
   Rechazados: 'rejected',
 };
 
@@ -166,6 +191,15 @@ export default function AdminOrdersPage() {
   }, []);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await api.patch(`/orders/${orderId}/status`, { status: newStatus });
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    } catch {
+      // could add toast
+    }
+  };
 
   const statusFilter = FILTER_STATUS[filter];
   const filtered = statusFilter ? orders.filter(o => o.status === statusFilter) : orders;
@@ -245,7 +279,7 @@ export default function AdminOrdersPage() {
             </thead>
             <tbody>
               {filtered.map((order) => (
-                <OrderRow key={order.id} order={order} />
+                <OrderRow key={order.id} order={order} onStatusChange={handleStatusChange} />
               ))}
             </tbody>
           </table>

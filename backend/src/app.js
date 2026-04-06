@@ -94,6 +94,8 @@ const startServer = async () => {
     if (process.env.NODE_ENV !== 'production') {
       const dialect = sequelize.getDialect();
       if (dialect === 'sqlite') {
+        // Deshabilitamos FK constraints para que ALTER TABLE no falle por referencias cruzadas
+        await sequelize.query('PRAGMA foreign_keys = OFF');
         await sequelize.query('DROP TABLE IF EXISTS `Users_backup`');
         await sequelize.query('DROP TABLE IF EXISTS `Books_backup`');
         await sequelize.query('DROP TABLE IF EXISTS `Orders_backup`');
@@ -102,6 +104,11 @@ const startServer = async () => {
     }
 
     await sequelize.sync({ alter: true });
+
+    // Reactivamos FK constraints después del sync
+    if (sequelize.getDialect() === 'sqlite') {
+      await sequelize.query('PRAGMA foreign_keys = ON');
+    }
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   } catch (error) {
     console.error('Unable to connect to the database:', error);

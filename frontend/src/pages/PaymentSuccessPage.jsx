@@ -1,8 +1,12 @@
+import { useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
+import { useCart } from '../context/CartContext';
 
 export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams();
+  const { clearCart } = useCart();
+  useEffect(() => { clearCart(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
 

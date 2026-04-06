@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { useUser } from '../context/UserContext';
-import { makeSanitizedHandler, sanitize } from '../utils/sanitize';
 import api from '../services/api';
 
 const inputClass = 'w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors';
@@ -13,9 +12,11 @@ const formatPeso = (n) =>
 
 function OrderStatusBadge({ status }) {
   const map = {
-    approved:   { label: 'Aprobado',   cls: 'bg-tertiary/10 text-tertiary' },
+    approved:   { label: 'Aprobado',   cls: 'bg-green-100 text-green-700' },
     pending:    { label: 'Pendiente',  cls: 'bg-amber-100 text-amber-700' },
     in_process: { label: 'En proceso', cls: 'bg-blue-100 text-blue-700' },
+    shipped:    { label: 'Enviado',    cls: 'bg-blue-100 text-blue-700' },
+    delivered:  { label: 'Entregado',  cls: 'bg-green-100 text-green-700' },
     rejected:   { label: 'Rechazado',  cls: 'bg-error/10 text-error' },
     cancelled:  { label: 'Cancelado',  cls: 'bg-surface-high text-on-surface-variant' },
   };
@@ -27,7 +28,7 @@ function OrderStatusBadge({ status }) {
   );
 }
 
-function OrdersSection() {
+function OrdersSection({ userToken }) {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState('');
@@ -36,11 +37,11 @@ function OrdersSection() {
   useEffect(() => {
     setOrdersLoading(true);
     setOrdersError('');
-    api.get('/orders/my')
+    api.get('/orders/my', { headers: { Authorization: `Bearer ${userToken}` } })
       .then(({ data }) => setOrders(data))
       .catch(() => setOrdersError('No se pudieron cargar tus pedidos. Intentá de nuevo.'))
       .finally(() => setOrdersLoading(false));
-  }, []);
+  }, [userToken]);
 
   if (ordersLoading) {
     return (
@@ -118,6 +119,7 @@ function OrdersSection() {
                     <th className="pb-1.5">Edición</th>
                     <th className="pb-1.5 text-right">Precio</th>
                     <th className="pb-1.5 text-right">Cant.</th>
+                    <th className="pb-1.5 text-right">Archivo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -127,6 +129,24 @@ function OrdersSection() {
                       <td className="py-1.5 capitalize text-on-surface-variant">{item.edicion}</td>
                       <td className="py-1.5 text-right text-on-surface">{formatPeso(item.precio)}</td>
                       <td className="py-1.5 text-right text-on-surface">{item.qty}</td>
+                      <td className="py-1.5 text-right">
+                        {item.edicion === 'digital' && item.archivoDigital && ['approved','delivered'].includes(order.status) && (
+                          <a
+                            href={item.archivoDigital}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-primary font-bold hover:underline"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Descargar
+                          </a>
+                        )}
+                        {item.edicion === 'digital' && item.archivoDigital && !['approved','delivered'].includes(order.status) && (
+                          <span className="text-on-surface-variant/50 text-[10px]">Disponible al confirmar pago</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -145,7 +165,17 @@ function ProfileSection({ user, onSave }) {
     email: user?.email || '',
     telefono: user?.telefono || '',
   });
-  const handleChange = makeSanitizedHandler(setForm);
+  const handleNombreChange = (e) => {
+    const val = e.target.value.replace(/[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s'-]/g, '');
+    setForm(f => ({ ...f, nombre: val.slice(0, 80) }));
+  };
+  const handleTelefonoChange = (e) => {
+    const val = e.target.value.replace(/[^0-9+\s\-()]/g, '');
+    setForm(f => ({ ...f, telefono: val.slice(0, 25) }));
+  };
+  const handleEmailChange = (e) => {
+    setForm(f => ({ ...f, email: e.target.value.slice(0, 100) }));
+  };
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -174,7 +204,7 @@ function ProfileSection({ user, onSave }) {
           <input
             name="nombre"
             value={form.nombre}
-            onChange={handleChange}
+            onChange={handleNombreChange}
             className={inputClass}
             maxLength={80}
             required
@@ -183,12 +213,11 @@ function ProfileSection({ user, onSave }) {
         <div>
           <label className={labelClass}>Teléfono</label>
           <input
-            type="tel"
             name="telefono"
             value={form.telefono}
-            onChange={handleChange}
+            onChange={handleTelefonoChange}
             className={inputClass}
-            maxLength={20}
+            maxLength={25}
             placeholder="+54 11 ..."
           />
         </div>
@@ -199,7 +228,7 @@ function ProfileSection({ user, onSave }) {
           type="email"
           name="email"
           value={form.email}
-          onChange={handleChange}
+          onChange={handleEmailChange}
           className={inputClass}
           maxLength={100}
           required
@@ -223,19 +252,35 @@ function ProfileSection({ user, onSave }) {
 }
 
 function AddressSection({ user, onSave }) {
-  const [form, setForm] = useState({ direccion: user?.direccion || '' });
-  const handleChange = (e) => setForm({ direccion: sanitize(e.target.value) });
+  // Parse existing address: try "Calle ALTURA, detalles" format
+  const parseAddress = (str) => {
+    if (!str) return { calle: '', altura: '', detalles: '' };
+    const [first, ...rest] = str.split(', ');
+    const parts = first.trim().split(' ');
+    const altura = parts.length > 1 && /^\d+$/.test(parts[parts.length - 1]) ? parts.pop() : '';
+    return { calle: parts.join(' '), altura, detalles: rest.join(', ') };
+  };
+
+  const [form, setForm] = useState(() => parseAddress(user?.direccion));
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  const buildDireccion = () => {
+    const parts = [form.calle.trim(), form.altura.trim()].filter(Boolean).join(' ');
+    return form.detalles.trim() ? `${parts}, ${form.detalles.trim()}` : parts;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.calle.trim() || !form.altura.trim()) {
+      return setError('Calle y altura son obligatorias');
+    }
     setSaving(true);
     setError('');
     setSuccess(false);
     try {
-      await onSave(form);
+      await onSave({ direccion: buildDireccion() });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -247,15 +292,39 @@ function AddressSection({ user, onSave }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="sm:col-span-2">
+          <label className={labelClass}>Calle *</label>
+          <input
+            value={form.calle}
+            onChange={(e) => setForm(f => ({ ...f, calle: e.target.value.replace(/[<>]/g, '').slice(0, 100) }))}
+            className={inputClass}
+            placeholder="Av. Corrientes"
+            maxLength={100}
+            required
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Altura *</label>
+          <input
+            type="number"
+            min="1"
+            value={form.altura}
+            onChange={(e) => setForm(f => ({ ...f, altura: e.target.value.replace(/[^0-9]/g, '').slice(0, 6) }))}
+            className={inputClass}
+            placeholder="1234"
+            required
+          />
+        </div>
+      </div>
       <div>
-        <label className={labelClass}>Dirección de envío</label>
-        <textarea
-          value={form.direccion}
-          onChange={handleChange}
-          rows={3}
-          maxLength={200}
-          className={`${inputClass} resize-none`}
-          placeholder="Calle, número, piso/depto — Ciudad, Provincia"
+        <label className={labelClass}>Piso / Depto / Observaciones</label>
+        <input
+          value={form.detalles}
+          onChange={(e) => setForm(f => ({ ...f, detalles: e.target.value.replace(/[<>]/g, '').slice(0, 100) }))}
+          className={inputClass}
+          placeholder="3° B, entre calles, referencia..."
+          maxLength={100}
         />
         <p className="text-xs text-on-surface-variant mt-2">
           Esta dirección se usará como predeterminada al finalizar una compra.
@@ -263,7 +332,13 @@ function AddressSection({ user, onSave }) {
       </div>
 
       {error && <p className="text-error text-sm">{error}</p>}
-      {success && <p className="text-sm text-tertiary font-medium">Dirección guardada correctamente.</p>}
+      {success && <p className="text-sm text-green-600 font-medium">Dirección guardada correctamente.</p>}
+
+      {form.calle && form.altura && (
+        <p className="text-xs text-on-surface-variant bg-surface-high rounded-lg px-3 py-2">
+          Vista previa: <span className="font-medium text-on-surface">{buildDireccion()}</span>
+        </p>
+      )}
 
       <div className="flex justify-end pt-2">
         <button
@@ -372,7 +447,7 @@ function SecuritySection({ onChangePassword, onDeleteAccount }) {
 const TABS = ['Mis pedidos', 'Mi perfil', 'Dirección', 'Seguridad'];
 
 export default function AccountPage() {
-  const { user, logout, updateProfile, changePassword, deleteAccount } = useUser();
+  const { user, token, logout, updateProfile, changePassword, deleteAccount } = useUser();
   const [tab, setTab] = useState('Mis pedidos');
   const navigate = useNavigate();
 
@@ -440,7 +515,7 @@ export default function AccountPage() {
               {tab === 'Mis pedidos' && (
                 <>
                   <h2 className="text-xl font-headline text-on-surface mb-6">Historial de pedidos</h2>
-                  <OrdersSection />
+                  <OrdersSection userToken={token} />
                 </>
               )}
 

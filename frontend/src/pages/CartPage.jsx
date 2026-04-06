@@ -107,11 +107,15 @@ function ConfirmModal({ title, message, confirmLabel, confirmClass, onConfirm, o
 function AddressModal({ user, isAllDigital, onConfirm, onCancel }) {
   const savedAddress = user?.direccion || '';
   const [useNew, setUseNew] = useState(!savedAddress);
-  const [nueva, setNueva] = useState('');
+  const [nueva, setNueva] = useState({ calle: '', altura: '', detalles: '' });
+  const buildNueva = () => {
+    const parts = [nueva.calle.trim(), nueva.altura.trim()].filter(Boolean).join(' ');
+    return nueva.detalles.trim() ? `${parts}, ${nueva.detalles.trim()}` : parts;
+  };
   const [guardar, setGuardar] = useState(true);
 
-  const addressToUse = useNew ? nueva.trim() : savedAddress;
-  const canContinue = isAllDigital || !!addressToUse;
+  const addressToUse = useNew ? buildNueva() : savedAddress;
+  const canContinue = isAllDigital || (useNew ? (nueva.calle.trim() && nueva.altura.trim()) : !!savedAddress);
 
   const handleConfirm = () => {
     if (!canContinue) return;
@@ -151,14 +155,35 @@ function AddressModal({ user, isAllDigital, onConfirm, onCancel }) {
                 ← Usar dirección guardada
               </button>
             )}
-            <input
-              value={nueva}
-              onChange={(e) => setNueva(sanitize(e.target.value))}
-              maxLength={200}
-              className="w-full border border-outline-variant rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
-              placeholder="Calle, número, depto — Ciudad, Provincia"
-              autoFocus
-            />
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2">
+                  <input
+                    value={nueva.calle}
+                    onChange={(e) => setNueva(n => ({ ...n, calle: sanitize(e.target.value).slice(0, 100) }))}
+                    className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                    placeholder="Calle"
+                    maxLength={100}
+                    autoFocus
+                  />
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  value={nueva.altura}
+                  onChange={(e) => setNueva(n => ({ ...n, altura: e.target.value.replace(/[^0-9]/g, '').slice(0, 6) }))}
+                  className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                  placeholder="Altura"
+                />
+              </div>
+              <input
+                value={nueva.detalles}
+                onChange={(e) => setNueva(n => ({ ...n, detalles: sanitize(e.target.value).slice(0, 100) }))}
+                className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                placeholder="Piso, depto, entre calles..."
+                maxLength={100}
+              />
+            </div>
             {user && (
               <label className="flex items-center gap-2 text-xs text-on-surface-variant mt-2 cursor-pointer">
                 <input type="checkbox" checked={guardar} onChange={(e) => setGuardar(e.target.checked)} className="accent-primary" />
@@ -237,7 +262,7 @@ export default function CartPage() {
         telefonoComprador: user.telefono || '',
       };
       const { data } = await api.post('/orders', payload);
-      clearCart();
+      // Cart is cleared on PaymentSuccessPage after confirmed payment
       // In dev use sandboxInitPoint, in prod use initPoint
       window.location.href = data.sandboxInitPoint || data.initPoint;
     } catch (err) {
@@ -327,13 +352,38 @@ export default function CartPage() {
             {/* Summary */}
             <div className="lg:col-span-4">
               <div className="sticky top-28 p-8 rounded-xl bg-surface-low">
-                <h2 className="text-2xl font-headline mb-8 border-b border-outline-variant/20 pb-4">Resumen de Pedido</h2>
-                <div className="space-y-4 mb-8">
-                  <div className="flex justify-between text-on-surface-variant">
-                    <span>Subtotal ({items.reduce((s, i) => s + i.qty, 0)} libros)</span>
+                <h2 className="text-2xl font-headline mb-6 border-b border-outline-variant/20 pb-4">Resumen de Pedido</h2>
+
+                {/* Desglose por ítem */}
+                <div className="space-y-3 mb-6">
+                  {items.map((item) => (
+                    <div key={item.bookId} className="flex justify-between items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-on-surface font-medium leading-snug line-clamp-1">{item.titulo}</p>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          {item.edicion && (
+                            <span className="text-[10px] uppercase tracking-widest text-outline bg-surface-high px-1.5 py-0.5 rounded">
+                              {item.edicion === 'digital' ? 'Digital' : 'Físico'}
+                            </span>
+                          )}
+                          <span className="text-xs text-on-surface-variant">
+                            {formatPeso(item.precio)} × {item.qty}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium text-on-surface flex-shrink-0">
+                        {formatPeso(item.precio * item.qty)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2 pt-4 border-t border-outline-variant/20 mb-6">
+                  <div className="flex justify-between text-on-surface-variant text-sm">
+                    <span>Subtotal ({items.reduce((s, i) => s + i.qty, 0)} {items.reduce((s, i) => s + i.qty, 0) === 1 ? 'libro' : 'libros'})</span>
                     <span className="font-medium">{formatPeso(totalPrice)}</span>
                   </div>
-                  <div className="flex justify-between text-on-surface-variant">
+                  <div className="flex justify-between text-on-surface-variant text-sm">
                     <span>Envío</span>
                     <span className="text-xs uppercase tracking-tight">Calculado al pagar</span>
                   </div>
