@@ -131,10 +131,11 @@ const handleWebhook = async (req, res) => {
       mpStatus === 'in_process' ? 'in_process' :
       mpStatus === 'cancelled' ? 'cancelled' : 'pending';
 
+    const previousStatus = order.status;
     await order.update({ status: newStatus, mpPaymentId: String(data.id) });
 
     // Decrement stock only on approval (and only once)
-    if (mpStatus === 'approved' && order.status !== 'approved') {
+    if (mpStatus === 'approved' && previousStatus !== 'approved') {
       for (const item of order.OrderItems.filter(i => i.edicion === 'fisico')) {
         if (item.bookId) {
           await Book.decrement('stock', { by: item.qty, where: { id: item.bookId } });
@@ -188,13 +189,14 @@ const updateOrderStatus = async (req, res) => {
     const order = await Order.findByPk(req.params.id, { include: [{ model: OrderItem }] });
     if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
 
+    const previousStatus = order.status;
     const updateData = { status };
     if (cancelNote !== undefined) updateData.cancelNote = cancelNote;
     if (cancelReason !== undefined) updateData.cancelReason = cancelReason;
     await order.update(updateData);
 
     // Decrement stock when manually approving (same logic as webhook)
-    if (status === 'approved' && order.status !== 'approved') {
+    if (status === 'approved' && previousStatus !== 'approved') {
       for (const item of order.OrderItems.filter(i => i.edicion === 'fisico')) {
         if (item.bookId) {
           await Book.decrement('stock', { by: item.qty, where: { id: item.bookId } });
