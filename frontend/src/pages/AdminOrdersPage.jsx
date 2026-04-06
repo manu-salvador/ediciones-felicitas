@@ -6,15 +6,24 @@ import api from '../services/api';
 const formatPeso = (n) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
 
+const CANCEL_REASON_LABELS = { me_equivoque: 'Me equivoqué', me_arrepenti: 'Me arrepentí' };
+const ADMIN_CANCEL_REASONS = [
+  { value: 'falta_stock', label: 'Falta de stock' },
+  { value: 'pago_rechazado', label: 'Pago rechazado' },
+  { value: 'problema_envio', label: 'Problema con el envío' },
+  { value: 'otro', label: 'Otro motivo' },
+];
+
 function StatusBadge({ status }) {
   const map = {
-    approved:   { label: 'Aprobado',   cls: 'bg-green-100 text-green-700' },
-    pending:    { label: 'Pendiente',  cls: 'bg-amber-100 text-amber-700' },
-    in_process: { label: 'En proceso', cls: 'bg-blue-100 text-blue-700' },
-    shipped:    { label: 'Enviado',    cls: 'bg-blue-100 text-blue-700' },
-    delivered:  { label: 'Entregado',  cls: 'bg-green-100 text-green-700' },
-    rejected:   { label: 'Rechazado',  cls: 'bg-error/10 text-error' },
-    cancelled:  { label: 'Cancelado',  cls: 'bg-surface-high text-on-surface-variant' },
+    approved:               { label: 'Aprobado',              cls: 'bg-green-100 text-green-700' },
+    pending:                { label: 'Pendiente',             cls: 'bg-amber-100 text-amber-700' },
+    in_process:             { label: 'En proceso',            cls: 'bg-blue-100 text-blue-700' },
+    shipped:                { label: 'Enviado',               cls: 'bg-blue-100 text-blue-700' },
+    delivered:              { label: 'Entregado',             cls: 'bg-green-100 text-green-700' },
+    rejected:               { label: 'Rechazado',             cls: 'bg-error/10 text-error' },
+    cancelled:              { label: 'Cancelado',             cls: 'bg-surface-high text-on-surface-variant' },
+    cancellation_requested: { label: 'Cancelación solicitada', cls: 'bg-orange-100 text-orange-700' },
   };
   const { label, cls } = map[status] || { label: status, cls: 'bg-surface-high text-on-surface-variant' };
   return (
@@ -24,8 +33,11 @@ function StatusBadge({ status }) {
   );
 }
 
-function OrderRow({ order, onStatusChange }) {
+function OrderRow({ order, onStatusChange, onCancellationDecision }) {
   const [expanded, setExpanded] = useState(false);
+  const [cancelNote, setCancelNote] = useState('');
+  const [cancelReason, setCancelReason] = useState('falta_stock');
+  const [showAdminCancel, setShowAdminCancel] = useState(false);
 
   return (
     <>
@@ -133,10 +145,40 @@ function OrderRow({ order, onStatusChange }) {
                     ))}
                   </tbody>
                 </table>
+                {/* Cancellation request — admin decision */}
+                {order.status === 'cancellation_requested' && (
+                  <div className="mt-4 pt-3 border-t border-orange-200 bg-orange-50 rounded-lg p-3 space-y-2">
+                    <p className="text-xs font-bold text-orange-700 uppercase tracking-widest">Solicitud de cancelación</p>
+                    <p className="text-xs text-orange-600">Motivo del cliente: <strong>{CANCEL_REASON_LABELS[order.cancelReason] || order.cancelReason}</strong></p>
+                    <input
+                      type="text"
+                      placeholder="Nota para el cliente (opcional)"
+                      value={cancelNote}
+                      onChange={(e) => setCancelNote(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full border border-orange-200 rounded-lg px-3 py-1.5 text-xs bg-white"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onCancellationDecision(order.id, 'approve', cancelNote); setCancelNote(''); }}
+                        className="px-3 py-1.5 text-xs font-bold bg-error/10 text-error rounded-full hover:bg-error/20 transition-colors"
+                      >
+                        Aprobar cancelación
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onCancellationDecision(order.id, 'reject', cancelNote); setCancelNote(''); }}
+                        className="px-3 py-1.5 text-xs font-bold bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
+                      >
+                        Rechazar (mantener orden)
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Status actions for physical/mixed orders */}
                 {['fisico', 'mixto'].includes(order.tipoEntrega) && (
-                  <div className="mt-4 pt-3 border-t border-outline-variant/10 flex flex-wrap gap-2">
-                    <span className="text-[10px] uppercase tracking-widest text-outline font-bold self-center mr-2">Actualizar estado:</span>
+                  <div className="mt-4 pt-3 border-t border-outline-variant/10 flex flex-wrap gap-2 items-center">
+                    <span className="text-[10px] uppercase tracking-widest text-outline font-bold mr-2">Actualizar estado:</span>
                     {order.status === 'approved' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onStatusChange(order.id, 'shipped'); }}
@@ -153,6 +195,57 @@ function OrderRow({ order, onStatusChange }) {
                         Marcar como entregado
                       </button>
                     )}
+                    {order.status === 'delivered' && (
+                      <span className={`text-xs px-3 py-1 rounded-full ${order.clientConfirmedDelivery ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {order.clientConfirmedDelivery ? '✓ Cliente confirmó recepción' : 'Esperando confirmación del cliente'}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Admin cancel (for approved/pending orders) */}
+                {['approved', 'pending', 'in_process'].includes(order.status) && (
+                  <div className="mt-3">
+                    {!showAdminCancel ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowAdminCancel(true); }}
+                        className="text-xs text-error/60 hover:text-error underline underline-offset-2 transition-colors"
+                      >
+                        Cancelar orden
+                      </button>
+                    ) : (
+                      <div className="p-3 bg-error/5 border border-error/20 rounded-lg space-y-2" onClick={(e) => e.stopPropagation()}>
+                        <p className="text-xs font-bold text-error">Cancelar orden</p>
+                        <select
+                          value={cancelReason}
+                          onChange={(e) => setCancelReason(e.target.value)}
+                          className="w-full border border-outline-variant rounded-lg px-3 py-1.5 text-xs bg-surface"
+                        >
+                          {ADMIN_CANCEL_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="Nota adicional para el cliente (opcional)"
+                          value={cancelNote}
+                          onChange={(e) => setCancelNote(e.target.value)}
+                          className="w-full border border-outline-variant rounded-lg px-3 py-1.5 text-xs bg-surface"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { onStatusChange(order.id, 'cancelled', cancelNote, cancelReason); setShowAdminCancel(false); setCancelNote(''); }}
+                            className="px-3 py-1.5 text-xs font-bold bg-error text-white rounded-full hover:bg-error/90 transition-colors"
+                          >
+                            Confirmar cancelación
+                          </button>
+                          <button
+                            onClick={() => setShowAdminCancel(false)}
+                            className="px-3 py-1.5 text-xs font-bold bg-surface border border-outline-variant text-on-surface-variant rounded-full"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -164,12 +257,13 @@ function OrderRow({ order, onStatusChange }) {
   );
 }
 
-const FILTERS = ['Todos', 'Aprobados', 'Pendientes', 'Enviados', 'Rechazados'];
+const FILTERS = ['Todos', 'Aprobados', 'Pendientes', 'Enviados', 'Cancelaciones', 'Rechazados'];
 const FILTER_STATUS = {
   Todos: null,
   Aprobados: 'approved',
   Pendientes: 'pending',
   Enviados: 'shipped',
+  Cancelaciones: 'cancellation_requested',
   Rechazados: 'rejected',
 };
 
@@ -192,13 +286,18 @@ export default function AdminOrdersPage() {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  const handleStatusChange = async (orderId, newStatus) => {
+  const handleStatusChange = async (orderId, newStatus, cancelNote, cancelReason) => {
     try {
-      await api.patch(`/orders/${orderId}/status`, { status: newStatus });
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    } catch {
-      // could add toast
-    }
+      const { data } = await api.patch(`/orders/${orderId}/status`, { status: newStatus, cancelNote, cancelReason });
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...data } : o));
+    } catch { /* silently fail */ }
+  };
+
+  const handleCancellationDecision = async (orderId, action, cancelNote) => {
+    try {
+      const { data } = await api.patch(`/orders/${orderId}/cancel-decision`, { action, cancelNote });
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...data } : o));
+    } catch { /* silently fail */ }
   };
 
   const statusFilter = FILTER_STATUS[filter];
@@ -206,6 +305,7 @@ export default function AdminOrdersPage() {
 
   const totalApproved = orders.filter(o => o.status === 'approved').length;
   const totalPending = orders.filter(o => o.status === 'pending').length;
+  const totalCancelRequests = orders.filter(o => o.status === 'cancellation_requested').length;
 
   return (
     <AdminLayout>
@@ -233,6 +333,15 @@ export default function AdminOrdersPage() {
           <span className="text-[10px] uppercase tracking-widest text-on-surface-variant">Pendientes</span>
           <span className={`text-3xl font-headline italic ${totalPending > 0 ? 'text-amber-600' : 'text-on-surface'}`}>{totalPending}</span>
         </div>
+        {totalCancelRequests > 0 && (
+          <>
+            <div className="w-px bg-outline-variant/30 self-stretch hidden sm:block" />
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] uppercase tracking-widest text-orange-600">Cancelaciones pendientes</span>
+              <span className="text-3xl font-headline italic text-orange-600">{totalCancelRequests}</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Filter buttons */}
@@ -279,7 +388,7 @@ export default function AdminOrdersPage() {
             </thead>
             <tbody>
               {filtered.map((order) => (
-                <OrderRow key={order.id} order={order} onStatusChange={handleStatusChange} />
+                <OrderRow key={order.id} order={order} onStatusChange={handleStatusChange} onCancellationDecision={handleCancellationDecision} />
               ))}
             </tbody>
           </table>

@@ -180,18 +180,93 @@ const getMyOrders = async (req, res) => {
 // PATCH /api/orders/:id/status — admin: update order status manually
 const updateOrderStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, cancelNote, cancelReason } = req.body;
     const allowed = ['pending', 'approved', 'in_process', 'rejected', 'cancelled', 'shipped', 'delivered'];
     if (!allowed.includes(status)) {
       return res.status(400).json({ error: 'Estado inválido' });
     }
     const order = await Order.findByPk(req.params.id);
     if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
-    await order.update({ status });
+    const updateData = { status };
+    if (cancelNote !== undefined) updateData.cancelNote = cancelNote;
+    if (cancelReason !== undefined) updateData.cancelReason = cancelReason;
+    await order.update(updateData);
     res.json(order);
   } catch {
     res.status(500).json({ error: 'Error al actualizar el estado' });
   }
 };
 
-module.exports = { createOrder, handleWebhook, getAdminOrders, getMyOrders, updateOrderStatus };
+// POST /api/orders/:id/request-cancel — client requests cancellation within 24h
+const requestCancellation = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (!['me_equivoque', 'me_arrepenti'].includes(reason)) {
+      return res.status(400).json({ error: 'Motivo inválido' });
+    }
+    const order = await Order.findByPk(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
+    if (order.userId !== req.user.id) return res.status(403).json({ error: 'No autorizado' });
+
+    if (!['pending', 'approved', 'in_process'].includes(order.status)) {
+      return res.status(400).json({ error: 'Esta orden no puede cancelarse en su estado actual' });
+    }
+    const CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
+    if (Date.now() - new Date(order.createdAt).getTime() > CANCEL_WINDOW_MS) {
+      return res.status(400).json({ error: 'El plazo de 24 horas para solicitar cancelación ha vencido' });
+    }
+    await order.update({ status: 'cancellation_requested', cancelReason: reason, cancellationRequestedAt: new Date() });
+    res.json(order);
+  } catch (err) {
+    console.error('requestCancellation error:', err);
+    res.status(500).json({ error: 'Error al procesar la solicitud' });
+  }
+};
+
+// PATCH /api/orders/:id/cancel-decision — admin approves or rejects cancellation request
+const handleCancellationRequest = async (req, res) => {
+  try {
+    const { action, cancelNote } = req.body;
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({ error: 'Acción inválida' });
+    }
+    const order = await Order.findByPk(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
+    if (order.status !== 'cancellation_requested') {
+      return res.status(400).json({ error: 'La orden no tiene una solicitud de cancelación pendiente' });
+    }
+    const newStatus = action === 'approve' ? 'cancelled' : 'approved';
+    const updateData = { status: newStatus, cancelNote: cancelNote || null };
+    if (action === 'reject') {
+      updateData.cancelReason = null;
+      updateData.cancellationRequestedAt = null;
+    }
+    await order.update(updateData);
+    res.json(order);
+  } catch (err) {
+    console.error('handleCancellationRequest error:', err);
+    res.status(500).json({ error: 'Error al procesar la decisión' });
+  }
+};
+
+// POST /api/orders/:id/confirm-delivery — client confirms they received the order
+const confirmDelivery = async (req, res) => {
+  try {
+    const order = await Order.findByPk(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
+    if (order.userId !== req.user.id) return res.status(403).json({ error: 'No autorizado' });
+    if (order.status !== 'delivered') {
+      return res.status(400).json({ error: 'El pedido aún no fue marcado como entregado' });
+    }
+    await order.update({ clientConfirmedDelivery: true });
+    res.json(order);
+  } catch (err) {
+    console.error('confirmDelivery error:', err);
+    res.status(500).json({ error: 'Error al confirmar la entrega' });
+  }
+};
+
+module.exports = {
+  createOrder, handleWebhook, getAdminOrders, getMyOrders,
+  updateOrderStatus, requestCancellation, handleCancellationRequest, confirmDelivery,
+};

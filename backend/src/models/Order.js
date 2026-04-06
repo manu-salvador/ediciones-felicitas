@@ -15,6 +15,10 @@ const Order = sequelize.define('Order', {
   emailComprador: { type: DataTypes.STRING, allowNull: false },
   telefonoComprador: { type: DataTypes.STRING, allowNull: true },
   userId: { type: DataTypes.INTEGER, allowNull: true },
+  cancelReason: { type: DataTypes.STRING, allowNull: true },
+  cancelNote: { type: DataTypes.TEXT, allowNull: true },
+  cancellationRequestedAt: { type: DataTypes.DATE, allowNull: true },
+  clientConfirmedDelivery: { type: DataTypes.BOOLEAN, defaultValue: false },
 });
 
 module.exports = Order;

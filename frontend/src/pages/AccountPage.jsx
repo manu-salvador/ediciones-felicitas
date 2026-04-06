@@ -10,15 +10,27 @@ const labelClass = 'block text-[0.625rem] font-bold uppercase tracking-widest te
 const formatPeso = (n) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
 
+const CONTACT_PHONE = '+54 9 11 0000-0000'; // reemplazar con el teléfono real del cliente
+const CONTACT_EMAIL = 'contacto@edicionesfelicitas.com.ar'; // reemplazar con el email real
+
+const CANCEL_REASON_LABELS = { me_equivoque: 'Me equivoqué', me_arrepenti: 'Me arrepentí' };
+const ADMIN_CANCEL_REASONS = [
+  { value: 'falta_stock', label: 'Falta de stock' },
+  { value: 'pago_rechazado', label: 'Pago rechazado' },
+  { value: 'problema_envio', label: 'Problema con el envío' },
+  { value: 'otro', label: 'Otro motivo' },
+];
+
 function OrderStatusBadge({ status }) {
   const map = {
-    approved:   { label: 'Aprobado',   cls: 'bg-green-100 text-green-700' },
-    pending:    { label: 'Pendiente',  cls: 'bg-amber-100 text-amber-700' },
-    in_process: { label: 'En proceso', cls: 'bg-blue-100 text-blue-700' },
-    shipped:    { label: 'Enviado',    cls: 'bg-blue-100 text-blue-700' },
-    delivered:  { label: 'Entregado',  cls: 'bg-green-100 text-green-700' },
-    rejected:   { label: 'Rechazado',  cls: 'bg-error/10 text-error' },
-    cancelled:  { label: 'Cancelado',  cls: 'bg-surface-high text-on-surface-variant' },
+    approved:                { label: 'Aprobado',             cls: 'bg-green-100 text-green-700' },
+    pending:                 { label: 'Pendiente',            cls: 'bg-amber-100 text-amber-700' },
+    in_process:              { label: 'En proceso',           cls: 'bg-blue-100 text-blue-700' },
+    shipped:                 { label: 'En camino',            cls: 'bg-blue-100 text-blue-700' },
+    delivered:               { label: 'Entregado',            cls: 'bg-green-100 text-green-700' },
+    rejected:                { label: 'Rechazado',            cls: 'bg-error/10 text-error' },
+    cancelled:               { label: 'Cancelado',            cls: 'bg-surface-high text-on-surface-variant' },
+    cancellation_requested:  { label: 'Cancelación solicitada', cls: 'bg-orange-100 text-orange-700' },
   };
   const { label, cls } = map[status] || { label: status, cls: 'bg-surface-high text-on-surface-variant' };
   return (
@@ -28,20 +40,52 @@ function OrderStatusBadge({ status }) {
   );
 }
 
+const CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
+const canRequestCancel = (order) =>
+  ['pending', 'approved', 'in_process'].includes(order.status) &&
+  Date.now() - new Date(order.createdAt).getTime() < CANCEL_WINDOW_MS;
+
 function OrdersSection({ userToken }) {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState('');
   const [expandedId, setExpandedId] = useState(null);
+  const [cancelingId, setCancelingId] = useState(null);
+  const [cancelReason, setCancelReason] = useState('me_equivoque');
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  const authHeaders = { headers: { Authorization: `Bearer ${userToken}` } };
 
   useEffect(() => {
     setOrdersLoading(true);
     setOrdersError('');
-    api.get('/orders/my', { headers: { Authorization: `Bearer ${userToken}` } })
+    api.get('/orders/my', authHeaders)
       .then(({ data }) => setOrders(data))
       .catch(() => setOrdersError('No se pudieron cargar tus pedidos. Intentá de nuevo.'))
       .finally(() => setOrdersLoading(false));
   }, [userToken]);
+
+  const handleRequestCancel = async (orderId) => {
+    setCancelLoading(true);
+    try {
+      const { data } = await api.post(`/orders/${orderId}/request-cancel`, { reason: cancelReason }, authHeaders);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...data } : o));
+      setCancelingId(null);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al solicitar la cancelación');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const handleConfirmDelivery = async (orderId) => {
+    try {
+      const { data } = await api.post(`/orders/${orderId}/confirm-delivery`, {}, authHeaders);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...data } : o));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al confirmar la entrega');
+    }
+  };
 
   if (ordersLoading) {
     return (
@@ -104,14 +148,15 @@ function OrdersSection({ userToken }) {
 
           {/* Expanded details */}
           {expandedId === order.id && (
-            <div className="border-t border-outline-variant/20 px-6 py-4 bg-surface-low">
-              <div className="text-xs text-on-surface-variant mb-3">
+            <div className="border-t border-outline-variant/20 px-6 py-4 bg-surface-low space-y-4">
+              {/* Delivery info */}
+              <div className="text-xs text-on-surface-variant">
                 <span className="uppercase tracking-widest font-bold text-outline">Entrega:</span>{' '}
                 <span className="capitalize">{order.tipoEntrega}</span>
-                {order.direccionEnvio && (
-                  <> — {order.direccionEnvio}</>
-                )}
+                {order.direccionEnvio && <> — {order.direccionEnvio}</>}
               </div>
+
+              {/* Items table */}
               <table className="w-full text-xs">
                 <thead>
                   <tr className="text-left text-outline uppercase tracking-widest text-[10px]">
@@ -131,12 +176,7 @@ function OrdersSection({ userToken }) {
                       <td className="py-1.5 text-right text-on-surface">{item.qty}</td>
                       <td className="py-1.5 text-right">
                         {item.edicion === 'digital' && item.archivoDigital && ['approved','delivered'].includes(order.status) && (
-                          <a
-                            href={item.archivoDigital}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-primary font-bold hover:underline"
-                          >
+                          <a href={item.archivoDigital} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary font-bold hover:underline">
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
@@ -151,6 +191,96 @@ function OrdersSection({ userToken }) {
                   ))}
                 </tbody>
               </table>
+
+              {/* Status-specific actions */}
+
+              {/* Cancelación solicitada */}
+              {order.status === 'cancellation_requested' && (
+                <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg text-xs text-orange-700">
+                  Tu solicitud de cancelación fue enviada. Motivo: <strong>{CANCEL_REASON_LABELS[order.cancelReason] || order.cancelReason}</strong>. Esperando respuesta de la editorial.
+                </div>
+              )}
+
+              {/* Nota del admin (cancelado o rechazado) */}
+              {order.cancelNote && ['cancelled', 'approved'].includes(order.status) && (
+                <div className="p-3 bg-surface border border-outline-variant/30 rounded-lg text-xs text-on-surface-variant">
+                  <span className="font-bold text-outline uppercase tracking-widest">Nota de la editorial: </span>
+                  {order.cancelNote}
+                </div>
+              )}
+
+              {/* En camino */}
+              {order.status === 'shipped' && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                  Tu pedido está en camino. Te avisamos cuando esté entregado.
+                </div>
+              )}
+
+              {/* Confirmar recepción */}
+              {order.status === 'delivered' && !order.clientConfirmedDelivery && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-xs">
+                  <p className="text-green-700 mb-2">La editorial marcó tu pedido como entregado. ¿Ya lo recibiste?</p>
+                  <button
+                    onClick={() => handleConfirmDelivery(order.id)}
+                    className="px-4 py-1.5 bg-green-600 text-white text-xs font-bold rounded-full hover:bg-green-700 transition-colors"
+                  >
+                    Sí, ya lo recibí
+                  </button>
+                </div>
+              )}
+              {order.status === 'delivered' && order.clientConfirmedDelivery && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Entrega confirmada. ¡Gracias por tu compra!
+                </div>
+              )}
+
+              {/* Solicitar cancelación */}
+              {canRequestCancel(order) && cancelingId !== order.id && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCancelingId(order.id); setCancelReason('me_equivoque'); }}
+                  className="text-xs text-error/70 hover:text-error underline underline-offset-2 transition-colors"
+                >
+                  Solicitar cancelación
+                </button>
+              )}
+              {cancelingId === order.id && (
+                <div className="p-3 bg-error/5 border border-error/20 rounded-lg space-y-3 text-xs">
+                  <p className="font-semibold text-error">Solicitar cancelación — tenés hasta 24 hs desde la compra</p>
+                  <select
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm bg-surface"
+                  >
+                    <option value="me_equivoque">Me equivoqué</option>
+                    <option value="me_arrepenti">Me arrepentí</option>
+                  </select>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleRequestCancel(order.id)}
+                      disabled={cancelLoading}
+                      className="px-4 py-1.5 bg-error text-white font-bold rounded-full hover:bg-error/90 transition-colors disabled:opacity-50"
+                    >
+                      {cancelLoading ? 'Enviando...' : 'Confirmar solicitud'}
+                    </button>
+                    <button
+                      onClick={() => setCancelingId(null)}
+                      className="px-4 py-1.5 bg-surface border border-outline-variant text-on-surface-variant font-bold rounded-full hover:bg-surface-high transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Contacto / reclamo */}
+              <div className="pt-2 border-t border-outline-variant/20 text-xs text-on-surface-variant">
+                Ante cualquier duda o inconveniente comunicarse a{' '}
+                <a href={`tel:${CONTACT_PHONE}`} className="text-primary hover:underline">{CONTACT_PHONE}</a>
+                {' '}o{' '}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">{CONTACT_EMAIL}</a>
+              </div>
             </div>
           )}
         </div>
