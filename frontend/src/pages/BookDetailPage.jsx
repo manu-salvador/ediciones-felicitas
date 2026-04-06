@@ -119,11 +119,24 @@ export default function BookDetailPage() {
             {/* Purchase section — precio adentro (fix #4) */}
             <div className="bg-surface-low p-8 rounded-xl border border-outline-variant/10">
               {/* Precio */}
-              <div className="flex items-baseline justify-between mb-6">
+              <div className="flex items-baseline justify-between mb-4">
                 <div>
                   <div className="font-headline text-4xl font-bold text-on-surface">{formatPeso(book.precio)}</div>
                   <div className="text-[10px] text-tertiary tracking-widest uppercase mt-1">IVA incluido</div>
                 </div>
+              </div>
+
+              {/* Stock badge */}
+              <div className="mb-6">
+                {book.stock === 0 && (
+                  <span className="inline-block text-xs bg-error/10 text-error px-3 py-1 rounded-full font-semibold">Sin stock</span>
+                )}
+                {book.stock > 0 && book.stock <= 5 && (
+                  <span className="inline-block text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-semibold">Últimas {book.stock} unidades disponibles</span>
+                )}
+                {book.stock > 5 && (
+                  <span className="inline-block text-xs bg-tertiary/10 text-tertiary px-3 py-1 rounded-full font-semibold">En stock</span>
+                )}
               </div>
 
               {/* Edition selector — fix #3: solo si tieneDigital */}
@@ -153,15 +166,15 @@ export default function BookDetailPage() {
                 <div className="flex items-center border-2 border-outline-variant/30 rounded-full p-1 w-fit">
                   <button
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
-                    disabled={added}
+                    disabled={added || book.stock === 0}
                     className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors text-on-surface disabled:opacity-40"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   </button>
                   <span className="font-headline text-xl font-bold w-10 text-center">{qty}</span>
                   <button
-                    onClick={() => setQty((q) => q + 1)}
-                    disabled={added}
+                    onClick={() => setQty((q) => Math.min(book.stock, q + 1))}
+                    disabled={added || book.stock === 0 || qty >= book.stock}
                     className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors text-on-surface disabled:opacity-40"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -170,7 +183,20 @@ export default function BookDetailPage() {
               </div>
 
               {/* Buttons — fix #5 */}
-              {!added ? (
+              {book.stock === 0 ? (
+                <div className="space-y-3">
+                  <button
+                    disabled
+                    className="w-full bg-outline-variant text-on-surface-variant font-bold py-5 px-8 rounded-full flex items-center justify-center gap-3 opacity-50 cursor-not-allowed"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                    <span className="tracking-widest uppercase text-sm">Agregar al carrito</span>
+                  </button>
+                  <p className="text-center text-sm text-error font-medium">Este libro no está disponible actualmente.</p>
+                </div>
+              ) : !added ? (
                 <button
                   onClick={handleAddToCart}
                   className="w-full bg-primary text-on-primary font-bold py-5 px-8 rounded-full flex items-center justify-center gap-3 hover:shadow-xl hover:shadow-primary/20 active:scale-95 transition-all"

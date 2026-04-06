@@ -1,11 +1,163 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { useUser } from '../context/UserContext';
-import { makeSanitizedHandler, sanitize } from '../utils/sanitize';
+import api from '../services/api';
 
 const inputClass = 'w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors';
 const labelClass = 'block text-[0.625rem] font-bold uppercase tracking-widest text-outline mb-2';
+
+const formatPeso = (n) =>
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
+
+function OrderStatusBadge({ status }) {
+  const map = {
+    approved:   { label: 'Aprobado',   cls: 'bg-green-100 text-green-700' },
+    pending:    { label: 'Pendiente',  cls: 'bg-amber-100 text-amber-700' },
+    in_process: { label: 'En proceso', cls: 'bg-blue-100 text-blue-700' },
+    shipped:    { label: 'Enviado',    cls: 'bg-blue-100 text-blue-700' },
+    delivered:  { label: 'Entregado',  cls: 'bg-green-100 text-green-700' },
+    rejected:   { label: 'Rechazado',  cls: 'bg-error/10 text-error' },
+    cancelled:  { label: 'Cancelado',  cls: 'bg-surface-high text-on-surface-variant' },
+  };
+  const { label, cls } = map[status] || { label: status, cls: 'bg-surface-high text-on-surface-variant' };
+  return (
+    <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
+function OrdersSection({ userToken }) {
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState('');
+  const [expandedId, setExpandedId] = useState(null);
+
+  useEffect(() => {
+    setOrdersLoading(true);
+    setOrdersError('');
+    api.get('/orders/my', { headers: { Authorization: `Bearer ${userToken}` } })
+      .then(({ data }) => setOrders(data))
+      .catch(() => setOrdersError('No se pudieron cargar tus pedidos. Intentá de nuevo.'))
+      .finally(() => setOrdersLoading(false));
+  }, [userToken]);
+
+  if (ordersLoading) {
+    return (
+      <div className="flex justify-center py-16">
+        <svg className="w-8 h-8 animate-spin text-primary/40" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+      </div>
+    );
+  }
+
+  if (ordersError) {
+    return <p className="text-error text-sm py-8 text-center">{ordersError}</p>;
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-14 h-14 text-outline-variant mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <p className="text-on-surface-variant font-medium mb-1">Todavía no realizaste ningún pedido</p>
+        <p className="text-on-surface-variant/60 text-sm mb-6">Cuando completes una compra, aparecerá aquí con su estado.</p>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest hover:shadow-lg hover:shadow-primary/20 transition-all"
+        >
+          Explorar el catálogo
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {orders.map((order) => (
+        <div key={order.id} className="border border-outline-variant/20 rounded-xl overflow-hidden">
+          {/* Order header row */}
+          <button
+            onClick={() => setExpandedId(expandedId === order.id ? null : order.id)}
+            className="w-full flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-surface hover:bg-surface-low transition-colors text-left"
+          >
+            <div className="flex items-center gap-4">
+              <span className="font-mono text-xs text-on-surface-variant">#{String(order.id).padStart(5, '0')}</span>
+              <span className="text-xs text-on-surface-variant">{new Date(order.createdAt).toLocaleDateString('es-AR')}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-headline font-bold text-primary">{formatPeso(order.total)}</span>
+              <OrderStatusBadge status={order.status} />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`w-4 h-4 text-on-surface-variant transition-transform ${expandedId === order.id ? 'rotate-180' : ''}`}
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </button>
+
+          {/* Expanded details */}
+          {expandedId === order.id && (
+            <div className="border-t border-outline-variant/20 px-6 py-4 bg-surface-low">
+              <div className="text-xs text-on-surface-variant mb-3">
+                <span className="uppercase tracking-widest font-bold text-outline">Entrega:</span>{' '}
+                <span className="capitalize">{order.tipoEntrega}</span>
+                {order.direccionEnvio && (
+                  <> — {order.direccionEnvio}</>
+                )}
+              </div>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-outline uppercase tracking-widest text-[10px]">
+                    <th className="pb-1.5">Título</th>
+                    <th className="pb-1.5">Edición</th>
+                    <th className="pb-1.5 text-right">Precio</th>
+                    <th className="pb-1.5 text-right">Cant.</th>
+                    <th className="pb-1.5 text-right">Archivo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.OrderItems?.map((item, idx) => (
+                    <tr key={idx} className="border-t border-outline-variant/10">
+                      <td className="py-1.5 text-on-surface font-medium">{item.titulo}</td>
+                      <td className="py-1.5 capitalize text-on-surface-variant">{item.edicion}</td>
+                      <td className="py-1.5 text-right text-on-surface">{formatPeso(item.precio)}</td>
+                      <td className="py-1.5 text-right text-on-surface">{item.qty}</td>
+                      <td className="py-1.5 text-right">
+                        {item.edicion === 'digital' && item.archivoDigital && ['approved','delivered'].includes(order.status) && (
+                          <a
+                            href={item.archivoDigital}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-primary font-bold hover:underline"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Descargar
+                          </a>
+                        )}
+                        {item.edicion === 'digital' && item.archivoDigital && !['approved','delivered'].includes(order.status) && (
+                          <span className="text-on-surface-variant/50 text-[10px]">Disponible al confirmar pago</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function ProfileSection({ user, onSave }) {
   const [form, setForm] = useState({
@@ -13,7 +165,17 @@ function ProfileSection({ user, onSave }) {
     email: user?.email || '',
     telefono: user?.telefono || '',
   });
-  const handleChange = makeSanitizedHandler(setForm);
+  const handleNombreChange = (e) => {
+    const val = e.target.value.replace(/[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s'-]/g, '');
+    setForm(f => ({ ...f, nombre: val.slice(0, 80) }));
+  };
+  const handleTelefonoChange = (e) => {
+    const val = e.target.value.replace(/[^0-9+\s\-()]/g, '');
+    setForm(f => ({ ...f, telefono: val.slice(0, 25) }));
+  };
+  const handleEmailChange = (e) => {
+    setForm(f => ({ ...f, email: e.target.value.slice(0, 100) }));
+  };
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -42,7 +204,7 @@ function ProfileSection({ user, onSave }) {
           <input
             name="nombre"
             value={form.nombre}
-            onChange={handleChange}
+            onChange={handleNombreChange}
             className={inputClass}
             maxLength={80}
             required
@@ -51,12 +213,11 @@ function ProfileSection({ user, onSave }) {
         <div>
           <label className={labelClass}>Teléfono</label>
           <input
-            type="tel"
             name="telefono"
             value={form.telefono}
-            onChange={handleChange}
+            onChange={handleTelefonoChange}
             className={inputClass}
-            maxLength={20}
+            maxLength={25}
             placeholder="+54 11 ..."
           />
         </div>
@@ -67,7 +228,7 @@ function ProfileSection({ user, onSave }) {
           type="email"
           name="email"
           value={form.email}
-          onChange={handleChange}
+          onChange={handleEmailChange}
           className={inputClass}
           maxLength={100}
           required
@@ -91,19 +252,35 @@ function ProfileSection({ user, onSave }) {
 }
 
 function AddressSection({ user, onSave }) {
-  const [form, setForm] = useState({ direccion: user?.direccion || '' });
-  const handleChange = (e) => setForm({ direccion: sanitize(e.target.value) });
+  // Parse existing address: try "Calle ALTURA, detalles" format
+  const parseAddress = (str) => {
+    if (!str) return { calle: '', altura: '', detalles: '' };
+    const [first, ...rest] = str.split(', ');
+    const parts = first.trim().split(' ');
+    const altura = parts.length > 1 && /^\d+$/.test(parts[parts.length - 1]) ? parts.pop() : '';
+    return { calle: parts.join(' '), altura, detalles: rest.join(', ') };
+  };
+
+  const [form, setForm] = useState(() => parseAddress(user?.direccion));
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  const buildDireccion = () => {
+    const parts = [form.calle.trim(), form.altura.trim()].filter(Boolean).join(' ');
+    return form.detalles.trim() ? `${parts}, ${form.detalles.trim()}` : parts;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.calle.trim() || !form.altura.trim()) {
+      return setError('Calle y altura son obligatorias');
+    }
     setSaving(true);
     setError('');
     setSuccess(false);
     try {
-      await onSave(form);
+      await onSave({ direccion: buildDireccion() });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -115,15 +292,39 @@ function AddressSection({ user, onSave }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="sm:col-span-2">
+          <label className={labelClass}>Calle *</label>
+          <input
+            value={form.calle}
+            onChange={(e) => setForm(f => ({ ...f, calle: e.target.value.replace(/[<>]/g, '').slice(0, 100) }))}
+            className={inputClass}
+            placeholder="Av. Corrientes"
+            maxLength={100}
+            required
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Altura *</label>
+          <input
+            type="number"
+            min="1"
+            value={form.altura}
+            onChange={(e) => setForm(f => ({ ...f, altura: e.target.value.replace(/[^0-9]/g, '').slice(0, 6) }))}
+            className={inputClass}
+            placeholder="1234"
+            required
+          />
+        </div>
+      </div>
       <div>
-        <label className={labelClass}>Dirección de envío</label>
-        <textarea
-          value={form.direccion}
-          onChange={handleChange}
-          rows={3}
-          maxLength={200}
-          className={`${inputClass} resize-none`}
-          placeholder="Calle, número, piso/depto — Ciudad, Provincia"
+        <label className={labelClass}>Piso / Depto / Observaciones</label>
+        <input
+          value={form.detalles}
+          onChange={(e) => setForm(f => ({ ...f, detalles: e.target.value.replace(/[<>]/g, '').slice(0, 100) }))}
+          className={inputClass}
+          placeholder="3° B, entre calles, referencia..."
+          maxLength={100}
         />
         <p className="text-xs text-on-surface-variant mt-2">
           Esta dirección se usará como predeterminada al finalizar una compra.
@@ -131,7 +332,13 @@ function AddressSection({ user, onSave }) {
       </div>
 
       {error && <p className="text-error text-sm">{error}</p>}
-      {success && <p className="text-sm text-tertiary font-medium">Dirección guardada correctamente.</p>}
+      {success && <p className="text-sm text-green-600 font-medium">Dirección guardada correctamente.</p>}
+
+      {form.calle && form.altura && (
+        <p className="text-xs text-on-surface-variant bg-surface-high rounded-lg px-3 py-2">
+          Vista previa: <span className="font-medium text-on-surface">{buildDireccion()}</span>
+        </p>
+      )}
 
       <div className="flex justify-end pt-2">
         <button
@@ -240,7 +447,7 @@ function SecuritySection({ onChangePassword, onDeleteAccount }) {
 const TABS = ['Mis pedidos', 'Mi perfil', 'Dirección', 'Seguridad'];
 
 export default function AccountPage() {
-  const { user, logout, updateProfile, changePassword, deleteAccount } = useUser();
+  const { user, token, logout, updateProfile, changePassword, deleteAccount } = useUser();
   const [tab, setTab] = useState('Mis pedidos');
   const navigate = useNavigate();
 
@@ -308,19 +515,7 @@ export default function AccountPage() {
               {tab === 'Mis pedidos' && (
                 <>
                   <h2 className="text-xl font-headline text-on-surface mb-6">Historial de pedidos</h2>
-                  <div className="text-center py-16">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-14 h-14 text-outline-variant mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-                    </svg>
-                    <p className="text-on-surface-variant font-medium mb-1">Todavía no realizaste ningún pedido</p>
-                    <p className="text-on-surface-variant/60 text-sm mb-6">Cuando completes una compra, aparecerá aquí con su estado.</p>
-                    <Link
-                      to="/"
-                      className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest hover:shadow-lg hover:shadow-primary/20 transition-all"
-                    >
-                      Explorar el catálogo
-                    </Link>
-                  </div>
+                  <OrdersSection userToken={token} />
                 </>
               )}
 

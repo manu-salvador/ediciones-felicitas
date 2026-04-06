@@ -8,7 +8,11 @@ import CartPage from './pages/CartPage';
 import LoginPage from './pages/LoginPage';
 import AuthPage from './pages/AuthPage';
 import AdminBooksPage from './pages/AdminBooksPage';
+import AdminOrdersPage from './pages/AdminOrdersPage';
 import AccountPage from './pages/AccountPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentPendingPage from './pages/PaymentPendingPage';
+import PaymentFailedPage from './pages/PaymentFailedPage';
 import Spinner from './components/ui/Spinner';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -44,9 +48,15 @@ function AppRoutes() {
       {/* User account */}
       <Route path="/cuenta" element={<UserRoute><AccountPage /></UserRoute>} />
 
+      {/* Payment result pages */}
+      <Route path="/pago/exitoso" element={<PaymentSuccessPage />} />
+      <Route path="/pago/pendiente" element={<PaymentPendingPage />} />
+      <Route path="/pago/fallido" element={<PaymentFailedPage />} />
+
       {/* Admin — /admin muestra login o panel según auth */}
       <Route path="/admin" element={<AdminRoute><AdminBooksPage /></AdminRoute>} />
       <Route path="/admin/nuevo" element={<AdminRoute><AdminBooksPage openForm /></AdminRoute>} />
+      <Route path="/admin/ordenes" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

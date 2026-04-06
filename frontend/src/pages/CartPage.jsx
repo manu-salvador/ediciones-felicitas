@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { useCart } from '../context/CartContext';
 import { useUser } from '../context/UserContext';
 import { sanitize } from '../utils/sanitize';
+import api from '../services/api';
 
 const formatPeso = (n) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
@@ -69,23 +70,32 @@ function CartItem({ item, onUpdateQty, onRemove }) {
   );
 }
 
-function ConfirmModal({ title, message, confirmLabel, confirmClass, onConfirm, onCancel }) {
+function ConfirmModal({ title, message, confirmLabel, confirmClass, onConfirm, onCancel, loading, error }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-surface rounded-2xl shadow-2xl p-8 max-w-sm w-full">
         <h3 className="text-xl font-headline text-on-surface mb-3">{title}</h3>
         <p className="text-on-surface-variant text-sm mb-8">{message}</p>
+        {error && <p className="text-error text-sm mb-4">{error}</p>}
         <div className="flex gap-3 justify-end">
           <button
             onClick={onCancel}
-            className="px-6 py-3 text-sm font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
+            disabled={loading}
+            className="px-6 py-3 text-sm font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
-            className={`px-6 py-3 text-sm font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 ${confirmClass}`}
+            disabled={loading}
+            className={`px-6 py-3 text-sm font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 ${confirmClass}`}
           >
+            {loading && (
+              <svg className="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+            )}
             {confirmLabel}
           </button>
         </div>
@@ -97,11 +107,15 @@ function ConfirmModal({ title, message, confirmLabel, confirmClass, onConfirm, o
 function AddressModal({ user, isAllDigital, onConfirm, onCancel }) {
   const savedAddress = user?.direccion || '';
   const [useNew, setUseNew] = useState(!savedAddress);
-  const [nueva, setNueva] = useState('');
+  const [nueva, setNueva] = useState({ calle: '', altura: '', detalles: '' });
+  const buildNueva = () => {
+    const parts = [nueva.calle.trim(), nueva.altura.trim()].filter(Boolean).join(' ');
+    return nueva.detalles.trim() ? `${parts}, ${nueva.detalles.trim()}` : parts;
+  };
   const [guardar, setGuardar] = useState(true);
 
-  const addressToUse = useNew ? nueva.trim() : savedAddress;
-  const canContinue = isAllDigital || !!addressToUse;
+  const addressToUse = useNew ? buildNueva() : savedAddress;
+  const canContinue = isAllDigital || (useNew ? (nueva.calle.trim() && nueva.altura.trim()) : !!savedAddress);
 
   const handleConfirm = () => {
     if (!canContinue) return;
@@ -141,14 +155,35 @@ function AddressModal({ user, isAllDigital, onConfirm, onCancel }) {
                 ← Usar dirección guardada
               </button>
             )}
-            <input
-              value={nueva}
-              onChange={(e) => setNueva(sanitize(e.target.value))}
-              maxLength={200}
-              className="w-full border border-outline-variant rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
-              placeholder="Calle, número, depto — Ciudad, Provincia"
-              autoFocus
-            />
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2">
+                  <input
+                    value={nueva.calle}
+                    onChange={(e) => setNueva(n => ({ ...n, calle: sanitize(e.target.value).slice(0, 100) }))}
+                    className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                    placeholder="Calle"
+                    maxLength={100}
+                    autoFocus
+                  />
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  value={nueva.altura}
+                  onChange={(e) => setNueva(n => ({ ...n, altura: e.target.value.replace(/[^0-9]/g, '').slice(0, 6) }))}
+                  className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                  placeholder="Altura"
+                />
+              </div>
+              <input
+                value={nueva.detalles}
+                onChange={(e) => setNueva(n => ({ ...n, detalles: sanitize(e.target.value).slice(0, 100) }))}
+                className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                placeholder="Piso, depto, entre calles..."
+                maxLength={100}
+              />
+            </div>
             {user && (
               <label className="flex items-center gap-2 text-xs text-on-surface-variant mt-2 cursor-pointer">
                 <input type="checkbox" checked={guardar} onChange={(e) => setGuardar(e.target.checked)} className="accent-primary" />
@@ -178,14 +213,19 @@ function AddressModal({ user, isAllDigital, onConfirm, onCancel }) {
 export default function CartPage() {
   const { items, updateQty, removeItem, clearCart, totalPrice } = useCart();
   const { user, isLoggedIn, updateProfile } = useUser();
+  const navigate = useNavigate();
   const [showClearModal, setShowClearModal] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+  const [pendingAddress, setPendingAddress] = useState(null);
 
   // Verdadero si TODOS los items del carrito son edición digital
   const isAllDigital = items.length > 0 && items.every((i) => i.edicion === 'digital');
 
   const handleCheckoutClick = () => {
+    if (!isLoggedIn) { navigate('/login'); return; }
     // Digital: no hace falta dirección física
     if (isAllDigital) { setShowAddressModal(true); return; }
     // Logueado y con dirección: ir al modal de confirmación directamente
@@ -198,8 +238,37 @@ export default function CartPage() {
     if (guardar && updateProfile) {
       try { await updateProfile({ direccion }); } catch (_) { /* no bloqueamos el flujo */ }
     }
+    setPendingAddress(direccion);
     setShowAddressModal(false);
     setShowCheckoutModal(true);
+  };
+
+  const handleFinalizeCheckout = async () => {
+    setCheckoutLoading(true);
+    setCheckoutError('');
+    try {
+      const payload = {
+        items: items.map(i => ({
+          bookId: i.bookId,
+          titulo: i.titulo,
+          autor: i.autor || '',
+          precio: Number(i.precio),
+          qty: i.qty,
+          edicion: i.edicion || 'fisico',
+        })),
+        direccionEnvio: isAllDigital ? null : (pendingAddress ?? user?.direccion ?? null),
+        nombreComprador: user.nombre,
+        emailComprador: user.email,
+        telefonoComprador: user.telefono || '',
+      };
+      const { data } = await api.post('/orders', payload);
+      // Cart is cleared on PaymentSuccessPage after confirmed payment
+      // In dev use sandboxInitPoint, in prod use initPoint
+      window.location.href = data.sandboxInitPoint || data.initPoint;
+    } catch (err) {
+      setCheckoutError(err.response?.data?.error || 'Error al procesar el pago. Intentá de nuevo.');
+      setCheckoutLoading(false);
+    }
   };
 
   return (
@@ -232,8 +301,10 @@ export default function CartPage() {
           message={`Estás a punto de finalizar tu pedido por ${formatPeso(totalPrice)}. ¿Continuás con el pago?`}
           confirmLabel="Continuar al pago"
           confirmClass="bg-primary text-on-primary hover:shadow-lg hover:shadow-primary/20"
-          onConfirm={() => { setShowCheckoutModal(false); /* TODO: MercadoPago */ }}
-          onCancel={() => setShowCheckoutModal(false)}
+          onConfirm={handleFinalizeCheckout}
+          onCancel={() => { if (!checkoutLoading) { setShowCheckoutModal(false); setCheckoutError(''); } }}
+          loading={checkoutLoading}
+          error={checkoutError}
         />
       )}
 
@@ -281,13 +352,38 @@ export default function CartPage() {
             {/* Summary */}
             <div className="lg:col-span-4">
               <div className="sticky top-28 p-8 rounded-xl bg-surface-low">
-                <h2 className="text-2xl font-headline mb-8 border-b border-outline-variant/20 pb-4">Resumen de Pedido</h2>
-                <div className="space-y-4 mb-8">
-                  <div className="flex justify-between text-on-surface-variant">
-                    <span>Subtotal ({items.reduce((s, i) => s + i.qty, 0)} libros)</span>
+                <h2 className="text-2xl font-headline mb-6 border-b border-outline-variant/20 pb-4">Resumen de Pedido</h2>
+
+                {/* Desglose por ítem */}
+                <div className="space-y-3 mb-6">
+                  {items.map((item) => (
+                    <div key={item.bookId} className="flex justify-between items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-on-surface font-medium leading-snug line-clamp-1">{item.titulo}</p>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          {item.edicion && (
+                            <span className="text-[10px] uppercase tracking-widest text-outline bg-surface-high px-1.5 py-0.5 rounded">
+                              {item.edicion === 'digital' ? 'Digital' : 'Físico'}
+                            </span>
+                          )}
+                          <span className="text-xs text-on-surface-variant">
+                            {formatPeso(item.precio)} × {item.qty}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium text-on-surface flex-shrink-0">
+                        {formatPeso(item.precio * item.qty)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2 pt-4 border-t border-outline-variant/20 mb-6">
+                  <div className="flex justify-between text-on-surface-variant text-sm">
+                    <span>Subtotal ({items.reduce((s, i) => s + i.qty, 0)} {items.reduce((s, i) => s + i.qty, 0) === 1 ? 'libro' : 'libros'})</span>
                     <span className="font-medium">{formatPeso(totalPrice)}</span>
                   </div>
-                  <div className="flex justify-between text-on-surface-variant">
+                  <div className="flex justify-between text-on-surface-variant text-sm">
                     <span>Envío</span>
                     <span className="text-xs uppercase tracking-tight">Calculado al pagar</span>
                   </div>

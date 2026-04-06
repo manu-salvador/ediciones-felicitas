@@ -9,16 +9,24 @@ const formatPeso = (n) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
 
 function BookCard({ book }) {
-  return (
-    <Link to={`/libro/${book.slug || book.id}`} className="group cursor-pointer block">
+  const isOutOfStock = book.stock === 0;
+  const isLowStock = book.stock > 0 && book.stock <= 5;
+
+  const cardContent = (
+    <>
       <div className="aspect-[2/3] bg-surface-high rounded-lg mb-4 overflow-hidden relative shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1">
         {book.imagen ? (
-          <img src={book.imagen} alt={book.titulo} className="w-full h-full object-cover" />
+          <img src={book.imagen} alt={book.titulo} className={`w-full h-full object-cover ${isOutOfStock ? 'grayscale opacity-60' : ''}`} />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-primary-container/20">
+          <div className={`w-full h-full flex items-center justify-center bg-primary-container/20 ${isOutOfStock ? 'opacity-60' : ''}`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-primary/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
             </svg>
+          </div>
+        )}
+        {isOutOfStock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+            <span className="bg-surface/90 text-error text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">Sin stock</span>
           </div>
         )}
       </div>
@@ -29,7 +37,27 @@ function BookCard({ book }) {
           <span className="inline-block text-xs bg-primary-container/25 text-primary px-2 py-0.5 rounded-full">{book.categoria}</span>
         )}
         <p className="text-lg font-headline font-bold text-tertiary pt-1">{formatPeso(book.precio)}</p>
+        {isOutOfStock && (
+          <span className="inline-block text-xs bg-error/10 text-error px-2 py-0.5 rounded-full font-semibold">Sin stock</span>
+        )}
+        {isLowStock && (
+          <span className="inline-block text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">Últimas {book.stock}</span>
+        )}
       </div>
+    </>
+  );
+
+  if (isOutOfStock) {
+    return (
+      <div className="group cursor-default block">
+        {cardContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link to={`/libro/${book.slug || book.id}`} className="group cursor-pointer block">
+      {cardContent}
     </Link>
   );
 }
@@ -83,7 +111,7 @@ export default function CatalogPage() {
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-outline flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value.replace(/[<>]/g, ''))}
                 placeholder="Buscar por título o autor…"
                 className="w-full border-none focus:outline-none text-sm bg-transparent"
               />

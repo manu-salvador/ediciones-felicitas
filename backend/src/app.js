@@ -9,10 +9,16 @@ require('dotenv').config();
 require('./models/Book');
 require('./models/User');
 
+const Order = require('./models/Order');
+const OrderItem = require('./models/OrderItem');
+Order.hasMany(OrderItem, { foreignKey: 'orderId' });
+OrderItem.belongsTo(Order, { foreignKey: 'orderId' });
+
 const bookRoutes = require('./routes/bookRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userAuthRoutes = require('./routes/userAuthRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -74,6 +80,7 @@ app.use('/api/books', bookRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userAuthRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.get('/', (req, res) => res.send('Ediciones Felicitas API is running'));
 
@@ -87,12 +94,21 @@ const startServer = async () => {
     if (process.env.NODE_ENV !== 'production') {
       const dialect = sequelize.getDialect();
       if (dialect === 'sqlite') {
+        // Deshabilitamos FK constraints para que ALTER TABLE no falle por referencias cruzadas
+        await sequelize.query('PRAGMA foreign_keys = OFF');
         await sequelize.query('DROP TABLE IF EXISTS `Users_backup`');
         await sequelize.query('DROP TABLE IF EXISTS `Books_backup`');
+        await sequelize.query('DROP TABLE IF EXISTS `Orders_backup`');
+        await sequelize.query('DROP TABLE IF EXISTS `OrderItems_backup`');
       }
     }
 
     await sequelize.sync({ alter: true });
+
+    // Reactivamos FK constraints después del sync
+    if (sequelize.getDialect() === 'sqlite') {
+      await sequelize.query('PRAGMA foreign_keys = ON');
+    }
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   } catch (error) {
     console.error('Unable to connect to the database:', error);
