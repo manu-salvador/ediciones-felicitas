@@ -382,35 +382,37 @@ function ProfileSection({ user, onSave }) {
 }
 
 function AddressSection({ user, onSave }) {
-  // Parse existing address: try "Calle ALTURA, detalles" format
-  const parseAddress = (str) => {
-    if (!str) return { calle: '', altura: '', detalles: '' };
-    const [first, ...rest] = str.split(', ');
-    const parts = first.trim().split(' ');
-    const altura = parts.length > 1 && /^\d+$/.test(parts[parts.length - 1]) ? parts.pop() : '';
-    return { calle: parts.join(' '), altura, detalles: rest.join(', ') };
+  const parseAddress = (str, ciudadFallback) => {
+    if (!str) return { calle: '', altura: '', piso: '', ciudad: ciudadFallback || '' };
+    // formato: "Calle NUMERO [piso] - Ciudad"
+    const [calleBloque, ciudadBloque] = str.split(' - ');
+    const parts = (calleBloque || '').trim().split(' ');
+    const altura = parts.length > 1 && /^\d/.test(parts[1]) ? parts[1] : '';
+    const calle = parts[0] || '';
+    const piso = parts.slice(2).join(' ');
+    return { calle, altura, piso, ciudad: ciudadBloque?.trim() || ciudadFallback || '' };
   };
 
-  const [form, setForm] = useState(() => parseAddress(user?.direccion));
+  const [form, setForm] = useState(() => parseAddress(user?.direccion, user?.ciudad));
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   const buildDireccion = () => {
-    const parts = [form.calle.trim(), form.altura.trim()].filter(Boolean).join(' ');
-    return form.detalles.trim() ? `${parts}, ${form.detalles.trim()}` : parts;
+    const pisoParte = form.piso.trim() ? ` ${form.piso.trim()}` : '';
+    return `${form.calle.trim()} ${form.altura.trim()}${pisoParte} - ${form.ciudad.trim()}`;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.calle.trim() || !form.altura.trim()) {
-      return setError('Calle y altura son obligatorias');
+    if (!form.calle.trim() || !form.altura.trim() || !form.ciudad.trim()) {
+      return setError('Calle, altura y ciudad son obligatorias');
     }
     setSaving(true);
     setError('');
     setSuccess(false);
     try {
-      await onSave({ direccion: buildDireccion() });
+      await onSave({ direccion: buildDireccion(), ciudad: form.ciudad.trim() });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -435,10 +437,8 @@ function AddressSection({ user, onSave }) {
           />
         </div>
         <div>
-          <label className={labelClass}>Altura *</label>
+          <label className={labelClass}>Número *</label>
           <input
-            type="number"
-            min="1"
             value={form.altura}
             onChange={(e) => setForm(f => ({ ...f, altura: e.target.value.replace(/[^0-9]/g, '').slice(0, 6) }))}
             className={inputClass}
@@ -448,13 +448,24 @@ function AddressSection({ user, onSave }) {
         </div>
       </div>
       <div>
-        <label className={labelClass}>Piso / Depto / Observaciones</label>
+        <label className={labelClass}>Piso / Dto (opcional)</label>
         <input
-          value={form.detalles}
-          onChange={(e) => setForm(f => ({ ...f, detalles: e.target.value.replace(/[<>]/g, '').slice(0, 100) }))}
+          value={form.piso}
+          onChange={(e) => setForm(f => ({ ...f, piso: e.target.value.replace(/[<>]/g, '').slice(0, 40) }))}
           className={inputClass}
-          placeholder="3° B, entre calles, referencia..."
-          maxLength={100}
+          placeholder="3° B"
+          maxLength={40}
+        />
+      </div>
+      <div>
+        <label className={labelClass}>Ciudad *</label>
+        <input
+          value={form.ciudad}
+          onChange={(e) => setForm(f => ({ ...f, ciudad: e.target.value.replace(/[<>]/g, '').slice(0, 80) }))}
+          className={inputClass}
+          placeholder="Buenos Aires"
+          maxLength={80}
+          required
         />
         <p className="text-xs text-on-surface-variant mt-2">
           Esta dirección se usará como predeterminada al finalizar una compra.
@@ -464,7 +475,7 @@ function AddressSection({ user, onSave }) {
       {error && <p className="text-error text-sm">{error}</p>}
       {success && <p className="text-sm text-green-600 font-medium">Dirección guardada correctamente.</p>}
 
-      {form.calle && form.altura && (
+      {form.calle && form.altura && form.ciudad && (
         <p className="text-xs text-on-surface-variant bg-surface-high rounded-lg px-3 py-2">
           Vista previa: <span className="font-medium text-on-surface">{buildDireccion()}</span>
         </p>
@@ -592,6 +603,9 @@ export default function AccountPage() {
             Hola, {user?.nombre}
           </h1>
           <p className="text-on-surface-variant mt-1 text-sm">{user?.email}</p>
+          {user?.ciudad && (
+            <p className="text-on-surface-variant/70 text-xs mt-0.5">{user.ciudad}</p>
+          )}
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">

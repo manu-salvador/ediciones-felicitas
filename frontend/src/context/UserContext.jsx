@@ -19,8 +19,8 @@ export function UserProvider({ children }) {
     }
   }, [token]);
 
-  const register = async (nombre, email, password, direccion) => {
-    const { data } = await api.post('/users/register', { nombre, email, password, direccion });
+  const register = async (nombre, email, password, { calle, numero, piso, ciudad }) => {
+    const { data } = await api.post('/users/register', { nombre, email, password, calle, numero, piso, ciudad });
     localStorage.setItem(TOKEN_KEY, data.token);
     setToken(data.token);
     setUser(data.user);

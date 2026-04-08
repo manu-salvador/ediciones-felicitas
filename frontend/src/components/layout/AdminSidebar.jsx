@@ -84,6 +84,15 @@ export default function AdminSidebar() {
             <span className="text-xs uppercase tracking-widest font-medium">{item.label}</span>
           </NavLink>
         ))}
+        <button
+          onClick={() => setShowPwModal(true)}
+          className="w-full flex items-center gap-3 text-on-surface-variant p-3 hover:bg-surface-high rounded-r-full hover:translate-x-1 transition-transform duration-200"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span className="text-xs uppercase tracking-widest font-medium">Contraseña</span>
+        </button>
       </nav>
 
       {/* Password change modal */}
@@ -110,25 +119,7 @@ export default function AdminSidebar() {
       )}
 
       {/* Bottom */}
-      <div className="px-4 mt-auto space-y-2">
-        <NavLink
-          to="/"
-          className="flex items-center gap-3 text-on-surface-variant p-3 hover:bg-surface-high rounded-r-full hover:translate-x-1 transition-transform duration-200"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          <span className="text-xs uppercase tracking-widest font-medium">Ver Catálogo</span>
-        </NavLink>
-        <button
-          onClick={() => setShowPwModal(true)}
-          className="w-full flex items-center gap-3 text-on-surface-variant p-3 hover:bg-surface-high rounded-r-full hover:translate-x-1 transition-transform duration-200"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-          <span className="text-xs uppercase tracking-widest font-medium">Contraseña</span>
-        </button>
+      <div className="px-4 mt-auto">
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 text-on-surface-variant p-3 hover:bg-surface-high rounded-r-full hover:translate-x-1 transition-transform duration-200"

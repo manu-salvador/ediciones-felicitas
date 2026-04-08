@@ -6,12 +6,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'ef-dev-secret-2024';
 
 const register = async (req, res) => {
   try {
-    const { nombre, email, password, direccion } = req.body;
+    const { nombre, email, password, calle, numero, piso, ciudad } = req.body;
     if (!nombre || !email || !password) {
       return res.status(400).json({ error: 'Nombre, email y contraseña son obligatorios' });
     }
-    if (!direccion) {
-      return res.status(400).json({ error: 'La dirección de envío es obligatoria' });
+    if (!calle || !numero || !ciudad) {
+      return res.status(400).json({ error: 'Calle, número y ciudad son obligatorios' });
     }
     if (password.length < 6) {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
@@ -20,7 +20,9 @@ const register = async (req, res) => {
     if (existing) {
       return res.status(400).json({ error: 'Ya existe una cuenta con ese email' });
     }
-    const user = await User.create({ nombre, email, password, direccion });
+    const pisoParte = piso ? ` ${piso}` : '';
+    const direccion = `${calle} ${numero}${pisoParte} - ${ciudad}`;
+    const user = await User.create({ nombre, email, password, direccion, ciudad });
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ token, user: user.toSafeJSON() });
   } catch (error) {
@@ -67,11 +69,13 @@ const updateProfile = async (req, res) => {
       if (existing) return res.status(400).json({ error: 'Ese email ya está en uso' });
     }
 
+    const { ciudad } = req.body;
     await user.update({
       nombre: nombre || user.nombre,
       email: email || user.email,
       telefono: telefono !== undefined ? telefono : user.telefono,
       direccion: direccion !== undefined ? direccion : user.direccion,
+      ciudad: ciudad !== undefined ? ciudad : user.ciudad,
     });
 
     res.json(user.toSafeJSON());

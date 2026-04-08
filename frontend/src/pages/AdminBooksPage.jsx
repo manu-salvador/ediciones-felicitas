@@ -45,6 +45,16 @@ export default function AdminBooksPage({ openForm: openFormProp = false }) {
   const handleEdit = (book) => { setEditingBook(book); setShowForm(true); setFormTouched(false); };
   const handleDelete = (book) => setDeletingBook(book);
 
+  const handleToggleActive = async (id, newActivo) => {
+    try {
+      await api.put(`/books/${id}`, { activo: newActivo });
+      setBooks(prev => prev.map(b => b.id === id ? { ...b, activo: newActivo } : b));
+      showToast(newActivo ? 'Libro activado.' : 'Libro desactivado.', 'success');
+    } catch {
+      showToast('Error al cambiar el estado del libro.');
+    }
+  };
+
   // Intento de cerrar el formulario: pide confirmación si hay cambios sin guardar
   const handleCloseForm = () => {
     if (formTouched) {
@@ -161,7 +171,7 @@ export default function AdminBooksPage({ openForm: openFormProp = false }) {
       </div>
 
       {/* Table */}
-      {loading ? <Spinner /> : <BookTable books={filtered} onEdit={handleEdit} onDelete={handleDelete} />}
+      {loading ? <Spinner /> : <BookTable books={filtered} onEdit={handleEdit} onDelete={handleDelete} onToggleActive={handleToggleActive} />}
 
       {/* Pagination hint */}
       {!loading && filtered.length > 0 && (

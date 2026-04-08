@@ -19,7 +19,7 @@ function StockBadge({ stock }) {
   );
 }
 
-export default function BookTable({ books, onEdit, onDelete }) {
+export default function BookTable({ books, onEdit, onDelete, onToggleActive }) {
   if (books.length === 0) {
     return (
       <div className="text-center py-20 text-on-surface-variant">
@@ -96,12 +96,20 @@ export default function BookTable({ books, onEdit, onDelete }) {
 
               {/* Estado */}
               <td className="px-6 py-5 text-center">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-low rounded-full">
+                <button
+                  onClick={() => onToggleActive(book.id, !book.activo)}
+                  title={book.activo ? 'Desactivar' : 'Activar'}
+                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full transition-colors ${
+                    book.activo
+                      ? 'bg-green-100 hover:bg-red-100'
+                      : 'bg-surface-high hover:bg-green-100'
+                  }`}
+                >
                   <StockDot activo={book.activo} />
                   <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
                     {book.activo ? 'Activo' : 'Inactivo'}
                   </span>
-                </div>
+                </button>
               </td>
 
               {/* Actions */}
