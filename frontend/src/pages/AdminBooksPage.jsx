@@ -120,14 +120,14 @@ export default function AdminBooksPage({ openForm: openFormProp = false }) {
   return (
     <AdminLayout>
       {/* Header */}
-      <header className="flex justify-between items-end mb-12">
+      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-6 lg:mb-12">
         <div>
-          <h2 className="text-5xl font-headline font-bold tracking-tight text-on-surface">Inventario</h2>
-          <p className="text-on-surface-variant mt-2">Gestioná el catálogo de libros de Ediciones Felicitas.</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-headline font-bold tracking-tight text-on-surface">Inventario</h2>
+          <p className="text-on-surface-variant mt-1 text-sm sm:text-base">Gestioná el catálogo de libros de Ediciones Felicitas.</p>
         </div>
         <button
           onClick={() => { setEditingBook(null); setShowForm(true); setFormTouched(false); }}
-          className="flex items-center gap-3 bg-primary text-on-primary px-8 py-4 rounded-full font-bold hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all"
+          className="flex items-center justify-center gap-3 bg-primary text-on-primary px-6 py-3 lg:px-8 lg:py-4 rounded-full font-bold hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all w-full sm:w-auto"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           <span>Añadir Libro</span>
@@ -135,7 +135,7 @@ export default function AdminBooksPage({ openForm: openFormProp = false }) {
       </header>
 
       {/* Stats bar */}
-      <div className="flex flex-wrap gap-6 mb-10 p-8 bg-surface-low rounded-xl">
+      <div className="flex flex-wrap gap-4 sm:gap-6 mb-6 lg:mb-10 p-4 sm:p-6 lg:p-8 bg-surface-low rounded-xl">
         <div className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-widest text-on-surface-variant">Total títulos</span>
           <span className="text-3xl font-headline italic text-primary">{books.length}</span>
@@ -186,11 +186,11 @@ export default function AdminBooksPage({ openForm: openFormProp = false }) {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[92vh] overflow-y-auto relative">
-            <div className="p-10">
+            <div className="p-5 sm:p-8 lg:p-10">
               {/* Modal header */}
               <div className="flex justify-between items-start mb-8">
                 <div>
-                  <h3 className="text-4xl font-headline font-bold tracking-tight text-primary">
+                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-headline font-bold tracking-tight text-primary">
                     {editingBook ? editingBook.titulo : 'Añadir Nuevo Libro'}
                   </h3>
                   {editingBook && (

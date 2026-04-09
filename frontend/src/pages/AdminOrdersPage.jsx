@@ -107,8 +107,9 @@ function OrderCard({ order, onStatusChange, onCancellationDecision }) {
             </div>
           )}
 
-          {/* Items table */}
-          <table className="w-full text-xs">
+          {/* Items table — overflow-x-auto para mobile */}
+          <div className="overflow-x-auto -mx-6 px-6">
+          <table className="w-full text-xs min-w-[480px]">
             <thead>
               <tr className="text-left text-outline uppercase tracking-widest text-[10px]">
                 <th className="pb-1.5">Título</th>
@@ -134,6 +135,7 @@ function OrderCard({ order, onStatusChange, onCancellationDecision }) {
               ))}
             </tbody>
           </table>
+          </div>
 
           {/* ── Admin: cancellation request decision ── */}
           {order.status === 'cancellation_requested' && (
@@ -322,15 +324,13 @@ export default function AdminOrdersPage() {
   return (
     <AdminLayout>
       {/* Header */}
-      <header className="flex justify-between items-end mb-12">
-        <div>
-          <h2 className="text-5xl font-headline font-bold tracking-tight text-on-surface">Órdenes</h2>
-          <p className="text-on-surface-variant mt-2">Gestioná los pedidos de Ediciones Felicitas.</p>
-        </div>
+      <header className="mb-6 lg:mb-12">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-headline font-bold tracking-tight text-on-surface">Órdenes</h2>
+        <p className="text-on-surface-variant mt-1 text-sm sm:text-base">Gestioná los pedidos de Ediciones Felicitas.</p>
       </header>
 
       {/* Stats bar */}
-      <div className="flex flex-wrap gap-6 mb-10 p-8 bg-surface-low rounded-xl">
+      <div className="flex flex-wrap gap-4 sm:gap-6 mb-6 lg:mb-10 p-4 sm:p-6 lg:p-8 bg-surface-low rounded-xl">
         <div className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-widest text-on-surface-variant">Total órdenes</span>
           <span className="text-3xl font-headline italic text-primary">{orders.length}</span>
@@ -358,13 +358,13 @@ export default function AdminOrdersPage() {
         )}
       </div>
 
-      {/* Filter pills */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      {/* Filter pills — scroll horizontal en mobile */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
         {FILTERS.map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${
+            className={`px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap flex-shrink-0 ${
               filter === f
                 ? 'bg-primary text-on-primary shadow-md'
                 : 'bg-surface-low text-on-surface-variant hover:bg-surface-high'

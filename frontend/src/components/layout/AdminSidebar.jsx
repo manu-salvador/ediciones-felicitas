@@ -26,7 +26,9 @@ const navItems = [
   },
 ];
 
-export default function AdminSidebar() {
+// open y onClose vienen de AdminLayout
+// En desktop (lg+) el sidebar siempre está visible via CSS; open solo afecta mobile
+export default function AdminSidebar({ open, onClose }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [showPwModal, setShowPwModal] = useState(false);
@@ -38,6 +40,11 @@ export default function AdminSidebar() {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleNavClick = () => {
+    // Cierra el drawer al navegar en mobile
+    onClose?.();
   };
 
   const handlePwSubmit = async (e) => {
@@ -64,40 +71,77 @@ export default function AdminSidebar() {
     'flex items-center gap-3 text-on-surface-variant p-3 hover:bg-surface-high rounded-r-full hover:translate-x-1 transition-transform duration-200';
 
   return (
-    <aside className="h-screen w-64 fixed left-0 top-0 bg-surface flex flex-col py-8 pr-4 z-50 border-r border-outline-variant/20">
-      {/* Logo */}
-      <div className="px-6 mb-10 flex flex-col items-start gap-2">
-        <img src="/logo-ef.png" alt="Ediciones Felicitas" className="h-14" />
-        <span className="text-[0.625rem] font-bold uppercase tracking-widest text-outline">Panel Admin</span>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 space-y-1">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            className={({ isActive }) => (isActive ? activeClass : inactiveClass)}
-          >
-            {item.icon}
-            <span className="text-xs uppercase tracking-widest font-medium">{item.label}</span>
-          </NavLink>
-        ))}
+    <>
+      <aside
+        className={`
+          h-screen w-64 fixed left-0 top-0
+          bg-surface flex flex-col py-8 pr-4
+          border-r border-outline-variant/20
+          transition-transform duration-300 ease-in-out
+          z-50
+          ${open ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0
+        `}
+      >
+        {/* Botón cerrar — solo en mobile */}
         <button
-          onClick={() => setShowPwModal(true)}
-          className="w-full flex items-center gap-3 text-on-surface-variant p-3 hover:bg-surface-high rounded-r-full hover:translate-x-1 transition-transform duration-200"
+          onClick={onClose}
+          className="lg:hidden absolute top-4 right-4 p-1.5 rounded-full hover:bg-surface-low text-on-surface-variant transition-colors"
+          aria-label="Cerrar menú"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
-          <span className="text-xs uppercase tracking-widest font-medium">Contraseña</span>
         </button>
-      </nav>
 
-      {/* Password change modal */}
+        {/* Logo */}
+        <div className="px-6 mb-10 flex flex-col items-start gap-2">
+          <img src="/logo-ef.png" alt="Ediciones Felicitas" className="h-14" />
+          <span className="text-[0.625rem] font-bold uppercase tracking-widest text-outline">Panel Admin</span>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 space-y-1">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={handleNavClick}
+              className={({ isActive }) => (isActive ? activeClass : inactiveClass)}
+            >
+              {item.icon}
+              <span className="text-xs uppercase tracking-widest font-medium">{item.label}</span>
+            </NavLink>
+          ))}
+          <button
+            onClick={() => setShowPwModal(true)}
+            className="w-full flex items-center gap-3 text-on-surface-variant p-3 hover:bg-surface-high rounded-r-full hover:translate-x-1 transition-transform duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span className="text-xs uppercase tracking-widest font-medium">Contraseña</span>
+          </button>
+        </nav>
+
+        {/* Bottom */}
+        <div className="px-4 mt-auto">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 text-on-surface-variant p-3 hover:bg-surface-high rounded-r-full hover:translate-x-1 transition-transform duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            <span className="text-xs uppercase tracking-widest font-medium">Salir</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Password change modal — fuera del aside para evitar z-index issues */}
       {showPwModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
           <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-xs p-6">
             <h3 className="font-headline font-bold text-on-surface mb-4">Cambiar contraseña</h3>
             {pwSuccess ? (
@@ -117,19 +161,6 @@ export default function AdminSidebar() {
           </div>
         </div>
       )}
-
-      {/* Bottom */}
-      <div className="px-4 mt-auto">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 text-on-surface-variant p-3 hover:bg-surface-high rounded-r-full hover:translate-x-1 transition-transform duration-200"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          <span className="text-xs uppercase tracking-widest font-medium">Salir</span>
-        </button>
-      </div>
-    </aside>
+    </>
   );
 }
