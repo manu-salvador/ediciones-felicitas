@@ -2,9 +2,25 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
-const sequelize = require('./config/database');
 require('dotenv').config();
+
+// Validate required environment variables before anything else
+const REQUIRED_ENV = [
+  'JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASSWORD',
+  'MP_ACCESS_TOKEN',
+  'R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET_NAME', 'R2_PUBLIC_URL',
+];
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missingEnv.length > 0) {
+  console.error(`ERROR: Faltan variables de entorno requeridas: ${missingEnv.join(', ')}`);
+  process.exit(1);
+}
+if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
+  console.error('ERROR: FRONTEND_URL es requerido en producción');
+  process.exit(1);
+}
+
+const sequelize = require('./config/database');
 
 require('./models/Book');
 require('./models/User');
@@ -26,10 +42,20 @@ const PORT = process.env.PORT || 3001;
 // Security headers
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-// CORS
+// CORS — en producción solo se permite el origen explícito; en dev acepta localhost
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL]
+  : ['http://localhost:5173', 'http://localhost:4173'];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: (origin, callback) => {
+    // Permitir requests sin origin (Postman, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS bloqueado para origin: ${origin}`));
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  credentials: true,
 }));
 
 // Rate limiting
@@ -72,8 +98,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Los archivos se sirven desde R2 — no hay carpeta local de uploads
 
 // Routes
 app.use('/api/books', bookRoutes);
@@ -103,7 +128,9 @@ const startServer = async () => {
       }
     }
 
-    await sequelize.sync({ alter: true });
+    // En producción solo crear tablas nuevas — nunca modificar schema automáticamente
+    const syncOptions = process.env.NODE_ENV === 'production' ? {} : { alter: true };
+    await sequelize.sync(syncOptions);
 
     // Reactivamos FK constraints después del sync
     if (sequelize.getDialect() === 'sqlite') {

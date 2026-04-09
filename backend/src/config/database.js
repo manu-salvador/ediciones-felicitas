@@ -13,7 +13,9 @@ if (env === 'production') {
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false
+        // rejectUnauthorized: false solo si el proveedor usa cert autofirmado (ej: Railway/Render sin CA bundle)
+        // Por defecto en producción rechazamos certificados no válidos (más seguro)
+        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
       }
     },
     logging: false

@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ef-dev-secret-2024';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const register = async (req, res) => {
   try {

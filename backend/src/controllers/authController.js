@@ -16,8 +16,8 @@ const getAdminPassword = () => {
 
 const login = async (req, res) => {
   const { usuario, password } = req.body;
-  const validUser = process.env.ADMIN_USER || 'admin';
-  const validPass = process.env.ADMIN_PASSWORD || 'admin123';
+  const validUser = process.env.ADMIN_USER;
+  const validPass = process.env.ADMIN_PASSWORD;
 
   if (usuario !== validUser) {
     return res.status(401).json({ error: 'Credenciales incorrectas' });
@@ -34,7 +34,7 @@ const login = async (req, res) => {
 
   const token = jwt.sign(
     { usuario },
-    process.env.JWT_SECRET || 'ef-secret-dev',
+    process.env.JWT_SECRET,
     { expiresIn: '8h' }
   );
   res.json({ token, usuario });
@@ -60,7 +60,7 @@ const changeAdminPassword = async (req, res) => {
   }
 
   const newHash = await bcrypt.hash(newPassword, 10);
-  fs.writeFileSync(OVERRIDE_FILE, JSON.stringify({ passwordHash: newHash }));
+  fs.writeFileSync(OVERRIDE_FILE, JSON.stringify({ passwordHash: newHash }), { mode: 0o600 });
   res.json({ ok: true });
 };
 

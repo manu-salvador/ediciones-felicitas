@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ef-dev-secret-2024';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const verifyUserToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
