@@ -108,34 +108,23 @@ function OrderCard({ order, onStatusChange, onCancellationDecision }) {
             </div>
           )}
 
-          {/* Items table — overflow-x-auto para mobile */}
-          <div className="overflow-x-auto -mx-3">
-          <table className="w-full text-xs min-w-[480px] px-3">
-            <thead>
-              <tr className="text-left text-outline uppercase tracking-widest text-[10px]">
-                <th className="pb-1.5">Título</th>
-                <th className="pb-1.5">Autor</th>
-                <th className="pb-1.5">Edición</th>
-                <th className="pb-1.5 text-right">Precio</th>
-                <th className="pb-1.5 text-right">Cant.</th>
-                <th className="pb-1.5 text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.OrderItems?.map((item, idx) => (
-                <tr key={idx} className="border-t border-outline-variant/10">
-                  <td className="py-1.5 text-on-surface font-medium">{item.titulo}</td>
-                  <td className="py-1.5 text-on-surface-variant">{item.autor || '—'}</td>
-                  <td className="py-1.5 capitalize text-on-surface-variant">{item.edicion}</td>
-                  <td className="py-1.5 text-right text-on-surface">{formatPeso(item.precio)}</td>
-                  <td className="py-1.5 text-right text-on-surface">{item.qty}</td>
-                  <td className="py-1.5 text-right font-bold text-on-surface">
-                    {formatPeso(Number(item.precio) * item.qty)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Items — lista responsive, sin tabla */}
+          <div className="space-y-2">
+            <p className="text-[10px] uppercase tracking-widest text-outline font-bold">Ítems</p>
+            {order.OrderItems?.map((item, idx) => (
+              <div key={idx} className="flex items-start justify-between gap-3 py-2 border-t border-outline-variant/10">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-on-surface truncate">{item.titulo}</p>
+                  <p className="text-[10px] text-on-surface-variant">
+                    {item.autor || '—'} · <span className="capitalize">{item.edicion}</span> · x{item.qty}
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-xs font-bold text-on-surface">{formatPeso(Number(item.precio) * item.qty)}</p>
+                  <p className="text-[10px] text-on-surface-variant">{formatPeso(item.precio)} c/u</p>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* ── Admin: cancellation request decision ── */}
