@@ -2,22 +2,40 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 require('dotenv').config();
 
 // Validate required environment variables before anything else
 const REQUIRED_ENV = [
   'JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASSWORD',
   'MP_ACCESS_TOKEN',
-  'R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET_NAME', 'R2_PUBLIC_URL',
 ];
+
+// R2 is only required in production; in dev we fall back to local storage
+const R2_ENV = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET_NAME', 'R2_PUBLIC_URL'];
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+
 if (missingEnv.length > 0) {
   console.error(`ERROR: Faltan variables de entorno requeridas: ${missingEnv.join(', ')}`);
   process.exit(1);
 }
-if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
-  console.error('ERROR: FRONTEND_URL es requerido en producción');
-  process.exit(1);
+
+if (process.env.NODE_ENV === 'production') {
+  const missingR2 = R2_ENV.filter((key) => !process.env[key]);
+  if (missingR2.length > 0) {
+    console.error(`ERROR: Variables R2 requeridas en producción: ${missingR2.join(', ')}`);
+    process.exit(1);
+  }
+  if (!process.env.FRONTEND_URL) {
+    console.error('ERROR: FRONTEND_URL es requerido en producción');
+    process.exit(1);
+  }
+} else {
+  // Development mode - check if R2 is configured
+  const hasR2 = R2_ENV.every((key) => process.env[key]);
+  if (!hasR2) {
+    console.log('⚠️  R2 no configurado - usando almacenamiento local (solo desarrollo)');
+  }
 }
 
 const sequelize = require('./config/database');
@@ -98,7 +116,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Los archivos se sirven desde R2 — no hay carpeta local de uploads
+// Static file serving for local uploads (only in development when R2 is not configured)
+const R2_CONFIGURED = R2_ENV.every((key) => process.env[key]);
+if (!R2_CONFIGURED) {
+  const uploadsPath = path.join(__dirname, '../uploads');
+  app.use('/uploads', express.static(uploadsPath));
+  console.log('📁 Sirviendo archivos locales desde:', uploadsPath);
+}
 
 // Routes
 app.use('/api/books', bookRoutes);
