@@ -1,11 +1,54 @@
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+const crypto = require('crypto');
+const { getSignedDownloadUrl } = require('../config/storage');
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
 const Book = require('../models/Book');
 const { Op } = require('sequelize');
+const sequelize = require('../config/database');
+
+/**
+ * Verifica la firma del webhook de MercadoPago.
+ * Docs: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
+ * Requiere MP_WEBHOOK_SECRET en .env (se obtiene en la config del webhook en MP Dashboard).
+ * Si MP_WEBHOOK_SECRET no está configurado, solo se loguea advertencia (modo permisivo para dev).
+ */
+const verifyMpWebhookSignature = (req) => {
+  const webhookSecret = process.env.MP_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('MP_WEBHOOK_SECRET no configurado en producción');
+    }
+    return; // En dev, omitir verificación si no hay secret
+  }
+
+  const xSignature = req.headers['x-signature'];
+  const xRequestId = req.headers['x-request-id'];
+  const dataId = req.query['data.id'] || req.body?.data?.id;
+
+  if (!xSignature) throw new Error('Webhook sin firma x-signature');
+
+  // Parsear ts y v1 del header x-signature
+  const parts = {};
+  xSignature.split(',').forEach((part) => {
+    const [key, val] = part.split('=');
+    if (key && val) parts[key.trim()] = val.trim();
+  });
+
+  if (!parts.ts || !parts.v1) throw new Error('Formato de firma inválido');
+
+  // Construir el manifest según la documentación de MP
+  const manifest = `id:${dataId};request-id:${xRequestId};ts:${parts.ts};`;
+  const expectedHash = crypto
+    .createHmac('sha256', webhookSecret)
+    .update(manifest)
+    .digest('hex');
+
+  if (expectedHash !== parts.v1) throw new Error('Firma de webhook inválida');
+};
 
 const getMpClient = () => new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN || 'TEST-your-access-token',
+  accessToken: process.env.MP_ACCESS_TOKEN,
 });
 
 // POST /api/orders — create order + MP preference (user must be logged in)
@@ -109,6 +152,14 @@ const createOrder = async (req, res) => {
 
 // POST /api/orders/webhook — MercadoPago payment notifications
 const handleWebhook = async (req, res) => {
+  // Verificar firma antes de procesar
+  try {
+    verifyMpWebhookSignature(req);
+  } catch (err) {
+    console.error('Webhook rechazado por firma inválida:', err.message);
+    return res.sendStatus(401);
+  }
+
   const { type, data } = req.body;
   if (type !== 'payment') return res.sendStatus(200);
 
@@ -134,14 +185,18 @@ const handleWebhook = async (req, res) => {
     const previousStatus = order.status;
     await order.update({ status: newStatus, mpPaymentId: String(data.id) });
 
-    // Decrement stock only on approval (and only once)
+    // Decrement stock only on approval (and only once) — inside a transaction to prevent race conditions
     if (mpStatus === 'approved' && previousStatus !== 'approved') {
-      for (const item of order.OrderItems.filter(i => i.edicion === 'fisico')) {
-        if (item.bookId) {
-          await Book.decrement('stock', { by: item.qty, where: { id: item.bookId } });
-          await Book.update({ stock: 0 }, { where: { id: item.bookId, stock: { [Op.lt]: 0 } } });
+      await sequelize.transaction(async (t) => {
+        for (const item of order.OrderItems.filter(i => i.edicion === 'fisico')) {
+          if (!item.bookId) continue;
+          // SELECT FOR UPDATE locks the row while we check+decrement
+          const book = await Book.findByPk(item.bookId, { lock: t.LOCK.UPDATE, transaction: t });
+          if (!book) continue;
+          const newStock = Math.max(0, book.stock - item.qty);
+          await book.update({ stock: newStock }, { transaction: t });
         }
-      }
+      });
     }
 
     res.sendStatus(200);
@@ -195,14 +250,17 @@ const updateOrderStatus = async (req, res) => {
     if (cancelReason !== undefined) updateData.cancelReason = cancelReason;
     await order.update(updateData);
 
-    // Decrement stock when manually approving (same logic as webhook)
+    // Decrement stock when manually approving — inside a transaction to prevent race conditions
     if (status === 'approved' && previousStatus !== 'approved') {
-      for (const item of order.OrderItems.filter(i => i.edicion === 'fisico')) {
-        if (item.bookId) {
-          await Book.decrement('stock', { by: item.qty, where: { id: item.bookId } });
-          await Book.update({ stock: 0 }, { where: { id: item.bookId, stock: { [Op.lt]: 0 } } });
+      await sequelize.transaction(async (t) => {
+        for (const item of order.OrderItems.filter(i => i.edicion === 'fisico')) {
+          if (!item.bookId) continue;
+          const book = await Book.findByPk(item.bookId, { lock: t.LOCK.UPDATE, transaction: t });
+          if (!book) continue;
+          const newStock = Math.max(0, book.stock - item.qty);
+          await book.update({ stock: newStock }, { transaction: t });
         }
-      }
+      });
     }
 
     res.json(order);
@@ -280,7 +338,41 @@ const confirmDelivery = async (req, res) => {
   }
 };
 
+// GET /api/orders/:id/download/:itemId — descarga de archivo digital post-pago
+const downloadDigitalFile = async (req, res) => {
+  try {
+    const order = await Order.findByPk(req.params.id, { include: [{ model: OrderItem }] });
+    if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
+
+    // Solo el dueño de la orden puede descargar
+    if (order.userId !== req.user.id) return res.status(403).json({ error: 'No autorizado' });
+
+    // Solo órdenes aprobadas o entregadas habilitan la descarga
+    if (order.status !== 'approved' && order.status !== 'delivered') {
+      return res.status(403).json({ error: 'El pago de esta orden no está aprobado' });
+    }
+
+    const item = order.OrderItems.find(
+      (i) => String(i.id) === String(req.params.itemId) && i.edicion === 'digital'
+    );
+    if (!item || !item.archivoDigital) {
+      return res.status(404).json({ error: 'Archivo no encontrado en esta orden' });
+    }
+
+    // Generar URL firmada de R2 válida por 10 minutos
+    // archivoDigital guarda la key de R2, ej: "digital/1234567890-abc.pdf"
+    const signedUrl = await getSignedDownloadUrl(item.archivoDigital, 600);
+
+    // Redirigir al usuario — el navegador descarga directo desde R2/CDN
+    res.redirect(signedUrl);
+  } catch (err) {
+    console.error('downloadDigitalFile error:', err);
+    res.status(500).json({ error: 'Error al generar el enlace de descarga' });
+  }
+};
+
 module.exports = {
   createOrder, handleWebhook, getAdminOrders, getMyOrders,
-  updateOrderStatus, requestCancellation, handleCancellationRequest, confirmDelivery,
+  updateOrderStatus, requestCancellation, handleCancellationRequest,
+  confirmDelivery, downloadDigitalFile,
 };
