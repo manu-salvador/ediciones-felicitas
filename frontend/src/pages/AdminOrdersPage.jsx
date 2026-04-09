@@ -45,29 +45,30 @@ function OrderCard({ order, onStatusChange, onCancellationDecision }) {
       {/* ── Header (always visible) ── */}
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-surface hover:bg-surface-low transition-colors text-left"
+        className="w-full flex items-center justify-between gap-2 px-3 py-3 bg-surface hover:bg-surface-low transition-colors text-left"
       >
-        {/* Left: id + date + buyer */}
-        <div className="flex flex-wrap items-center gap-4">
-          <span className="font-mono text-xs text-on-surface-variant">
-            #{String(order.id).padStart(5, '0')}
-          </span>
-          <span className="text-xs text-on-surface-variant">
-            {new Date(order.createdAt).toLocaleDateString('es-AR')}
-          </span>
-          <span className="text-sm font-medium text-on-surface">{order.nombreComprador}</span>
-          <span className="text-xs text-on-surface-variant">{order.emailComprador}</span>
+        <div className="flex flex-col gap-1 flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-on-surface-variant">
+              #{String(order.id).padStart(5, '0')}
+            </span>
+            <span className="text-xs text-on-surface-variant">
+              {new Date(order.createdAt).toLocaleDateString('es-AR')}
+            </span>
+          </div>
+          <span className="text-sm font-medium text-on-surface truncate">{order.nombreComprador}</span>
         </div>
 
-        {/* Right: total + badge + chevron */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-headline font-bold text-primary">
-            {formatPeso(order.total)}
-          </span>
-          <StatusBadge status={order.status} />
+        <div className="flex items-center gap-2">
+          <div className="text-right">
+            <div className="text-sm font-headline font-bold text-primary whitespace-nowrap">
+              {formatPeso(order.total)}
+            </div>
+            <StatusBadge status={order.status} />
+          </div>
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className={`w-4 h-4 text-on-surface-variant transition-transform ${expanded ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-on-surface-variant transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`}
             viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
           >
             <polyline points="6 9 12 15 18 9"/>
@@ -77,7 +78,7 @@ function OrderCard({ order, onStatusChange, onCancellationDecision }) {
 
       {/* ── Expanded body ── */}
       {expanded && (
-        <div className="border-t border-outline-variant/20 px-6 py-4 bg-surface-low space-y-4">
+        <div className="border-t border-outline-variant/20 px-3 py-3 bg-surface-low space-y-3">
 
           {/* Delivery info */}
           <div className="text-xs text-on-surface-variant">
@@ -108,8 +109,8 @@ function OrderCard({ order, onStatusChange, onCancellationDecision }) {
           )}
 
           {/* Items table — overflow-x-auto para mobile */}
-          <div className="overflow-x-auto -mx-6 px-6">
-          <table className="w-full text-xs min-w-[480px]">
+          <div className="overflow-x-auto -mx-3">
+          <table className="w-full text-xs min-w-[480px] px-3">
             <thead>
               <tr className="text-left text-outline uppercase tracking-widest text-[10px]">
                 <th className="pb-1.5">Título</th>
@@ -170,32 +171,32 @@ function OrderCard({ order, onStatusChange, onCancellationDecision }) {
           )}
 
           {/* ── Admin: status actions ── */}
-          <div className="pt-2 border-t border-outline-variant/10 flex flex-wrap gap-2 items-center">
-            <span className="text-[10px] uppercase tracking-widest text-outline font-bold mr-1">
-              Actualizar estado:
+          <div className="pt-2 border-t border-outline-variant/10 flex flex-wrap gap-2">
+            <span className="text-[10px] uppercase tracking-widest text-outline font-bold w-full">
+              Acciones:
             </span>
 
             {order.status === 'approved' && ['fisico', 'mixto'].includes(order.tipoEntrega) && (
               <button
                 onClick={(e) => { e.stopPropagation(); onStatusChange(order.id, 'shipped'); }}
-                className="px-3 py-1.5 text-xs font-bold bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+                className="px-3 py-1.5 text-xs font-bold bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors whitespace-nowrap"
               >
-                Marcar como enviado
+                → Enviado
               </button>
             )}
 
             {order.status === 'shipped' && (
               <button
                 onClick={(e) => { e.stopPropagation(); onStatusChange(order.id, 'delivered'); }}
-                className="px-3 py-1.5 text-xs font-bold bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
+                className="px-3 py-1.5 text-xs font-bold bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors whitespace-nowrap"
               >
-                Marcar como entregado
+                ✓ Entregado
               </button>
             )}
 
             {order.status === 'delivered' && (
               <span className={`text-xs px-3 py-1 rounded-full ${order.clientConfirmedDelivery ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                {order.clientConfirmedDelivery ? '✓ Cliente confirmó recepción' : 'Esperando confirmación del cliente'}
+                {order.clientConfirmedDelivery ? '✓ Confirmado por cliente' : '⏳ Esperando confirmación'}
               </span>
             )}
 
