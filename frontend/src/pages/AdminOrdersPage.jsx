@@ -189,22 +189,21 @@ function OrderCard({ order, onStatusChange, onCancellationDecision }) {
               </span>
             )}
 
-            {!['shipped', 'delivered', 'cancelled'].includes(order.status) && (
-              <select
-                defaultValue=""
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => { if (e.target.value) { onStatusChange(order.id, e.target.value); e.target.value = ''; } }}
-                className="text-xs border border-outline-variant rounded-full px-3 py-1.5 bg-surface text-on-surface-variant"
-              >
-                <option value="" disabled>Estado manual…</option>
-                <option value="pending">Pendiente</option>
-                <option value="approved">Aprobado</option>
-                <option value="in_process">En proceso</option>
-                <option value="shipped">Enviado</option>
-                <option value="delivered">Entregado</option>
-                <option value="rejected">Rechazado</option>
-              </select>
-            )}
+            <select
+              defaultValue=""
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => { if (e.target.value) { onStatusChange(order.id, e.target.value); e.target.value = ''; } }}
+              className="text-xs border border-outline-variant rounded-full px-3 py-1.5 bg-surface text-on-surface-variant"
+            >
+              <option value="" disabled>Cambiar estado…</option>
+              <option value="pending">Pendiente</option>
+              <option value="approved">Aprobado</option>
+              <option value="in_process">En proceso</option>
+              <option value="shipped">Enviado</option>
+              <option value="delivered">Entregado</option>
+              <option value="rejected">Rechazado</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
           </div>
 
           {/* ── Admin: cancel order ── */}
