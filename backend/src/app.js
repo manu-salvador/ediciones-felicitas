@@ -133,6 +133,15 @@ app.use('/api/orders', orderRoutes);
 
 app.get('/', (req, res) => res.send('Ediciones Felicitas API is running'));
 
+app.get('/api/health', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.json({ status: 'ok', db: 'connected' });
+  } catch {
+    res.status(503).json({ status: 'error', db: 'disconnected' });
+  }
+});
+
 const startServer = async () => {
   try {
     await sequelize.authenticate();
