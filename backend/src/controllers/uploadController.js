@@ -2,18 +2,22 @@ const multer = require('multer');
 const path = require('path');
 const { uploadToR2, getPublicUrl } = require('../config/storage');
 
+const IMAGE_TYPES = /\.(jpg|jpeg|png|webp|gif)$/i;
 const ALLOWED_TYPES = {
-  libros: /\.(jpg|jpeg|png|webp|gif)$/i,
+  libros:        IMAGE_TYPES,
+  publicaciones: IMAGE_TYPES,
   digital: /\.(pdf|epub)$/i,
 };
-const MAX_SIZE = { libros: 15 * 1024 * 1024, digital: 50 * 1024 * 1024 };
+const MAX_SIZE = { libros: 15 * 1024 * 1024, publicaciones: 10 * 1024 * 1024, digital: 50 * 1024 * 1024 };
+
+const resolveType = (param) => ['digital', 'publicaciones'].includes(param) ? param : 'libros';
 
 // Multer en memoria — el archivo no toca el disco, va directo a R2
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_SIZE.digital }, // cota absoluta; el fileFilter refina por tipo
   fileFilter: (req, file, cb) => {
-    const type = req.params.type === 'digital' ? 'digital' : 'libros';
+    const type = resolveType(req.params.type);
     if (ALLOWED_TYPES[type].test(path.extname(file.originalname))) {
       cb(null, true);
     } else {
@@ -25,7 +29,7 @@ const upload = multer({
 const uploadFile = async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
 
-  const type = req.params.type === 'digital' ? 'digital' : 'libros';
+  const type = resolveType(req.params.type);
 
   // Verificar límite correcto según tipo
   if (req.file.size > MAX_SIZE[type]) {
@@ -39,12 +43,12 @@ const uploadFile = async (req, res) => {
   try {
     await uploadToR2(req.file.buffer, key, req.file.mimetype);
 
-    if (type === 'libros') {
-      // Portadas → URL pública directa (se usa como <img src="...">)
-      res.json({ url: getPublicUrl(key) });
-    } else {
+    if (type === 'digital') {
       // Digitales → solo guardamos la key; la URL se genera bajo demanda al descargar
       res.json({ url: key });
+    } else {
+      // Imágenes (libros, publicaciones) → URL pública directa
+      res.json({ url: getPublicUrl(key) });
     }
   } catch (err) {
     console.error('uploadFile R2 error:', err);

@@ -33,11 +33,12 @@ function StatusBadge({ status }) {
   );
 }
 
-function OrderCard({ order, onStatusChange, onCancellationDecision }) {
+function OrderCard({ order, onStatusChange, onCancellationDecision, onDelete }) {
   const [expanded, setExpanded] = useState(false);
   const [cancelNote, setCancelNote]     = useState('');
   const [cancelReason, setCancelReason] = useState('falta_stock');
   const [showAdminCancel, setShowAdminCancel] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
     <div className="border-2 border-outline-variant/40 rounded-xl overflow-hidden shadow-sm">
@@ -257,6 +258,37 @@ function OrderCard({ order, onStatusChange, onCancellationDecision }) {
             </div>
           )}
 
+          {/* ── Admin: delete order ── */}
+          <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-xs text-on-surface-variant/40 hover:text-error/70 underline underline-offset-2 transition-colors"
+              >
+                Eliminar orden
+              </button>
+            ) : (
+              <div className="p-3 bg-error/5 border border-error/20 rounded-lg space-y-2">
+                <p className="text-xs font-bold text-error">¿Eliminar definitivamente esta orden?</p>
+                <p className="text-xs text-on-surface-variant">Esta acción no se puede deshacer.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onDelete(order.id)}
+                    className="px-3 py-1.5 text-xs font-bold bg-error text-white rounded-full hover:bg-error/90 transition-colors"
+                  >
+                    Sí, eliminar
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="px-3 py-1.5 text-xs font-bold bg-surface border border-outline-variant text-on-surface-variant rounded-full"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
         </div>
       )}
     </div>
@@ -300,6 +332,13 @@ export default function AdminOrdersPage() {
     try {
       const { data } = await api.patch(`/orders/${orderId}/cancel-decision`, { action, cancelNote });
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...data } : o));
+    } catch { /* silently fail */ }
+  };
+
+  const handleDelete = async (orderId) => {
+    try {
+      await api.delete(`/orders/${orderId}`);
+      setOrders(prev => prev.filter(o => o.id !== orderId));
     } catch { /* silently fail */ }
   };
 
@@ -379,6 +418,7 @@ export default function AdminOrdersPage() {
               order={order}
               onStatusChange={handleStatusChange}
               onCancellationDecision={handleCancellationDecision}
+              onDelete={handleDelete}
             />
           ))}
         </div>

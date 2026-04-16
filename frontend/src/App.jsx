@@ -9,6 +9,9 @@ import LoginPage from './pages/LoginPage';
 import AuthPage from './pages/AuthPage';
 import AdminBooksPage from './pages/AdminBooksPage';
 import AdminOrdersPage from './pages/AdminOrdersPage';
+import AdminPublicacionesPage from './pages/AdminPublicacionesPage';
+import PublicacionesPage from './pages/PublicacionesPage';
+import PublicacionDetailPage from './pages/PublicacionDetailPage';
 import AccountPage from './pages/AccountPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentPendingPage from './pages/PaymentPendingPage';
@@ -38,6 +41,8 @@ function AppRoutes() {
       <Route path="/" element={<CatalogPage />} />
       <Route path="/libro/:slug" element={<BookDetailPage />} />
       <Route path="/carrito" element={<CartPage />} />
+      <Route path="/publicaciones" element={<PublicacionesPage />} />
+      <Route path="/publicaciones/:id" element={<PublicacionDetailPage />} />
 
       {/* User auth — una sola URL con tabs login/registro */}
       <Route path="/login" element={<AuthPage />} />
@@ -57,6 +62,7 @@ function AppRoutes() {
       <Route path="/admin" element={<AdminRoute><AdminBooksPage /></AdminRoute>} />
       <Route path="/admin/nuevo" element={<AdminRoute><AdminBooksPage openForm /></AdminRoute>} />
       <Route path="/admin/ordenes" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+      <Route path="/admin/publicaciones" element={<AdminRoute><AdminPublicacionesPage /></AdminRoute>} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

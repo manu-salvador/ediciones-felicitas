@@ -1,19 +1,12 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const fs = require('fs');
-const path = require('path');
+const Config = require('../models/Config');
 
-const OVERRIDE_FILE = process.env.NODE_ENV === 'production'
-  ? '/app/uploads/admin_override.json'
-  : path.join(__dirname, '../../admin_override.json');
+const ADMIN_PASS_KEY = 'admin_password_hash';
 
-const getAdminPassword = () => {
-  try {
-    if (fs.existsSync(OVERRIDE_FILE)) {
-      return JSON.parse(fs.readFileSync(OVERRIDE_FILE, 'utf8')).passwordHash || null;
-    }
-  } catch (_) {}
-  return null;
+const getAdminPasswordHash = async () => {
+  const row = await Config.findByPk(ADMIN_PASS_KEY);
+  return row?.value || null;
 };
 
 const login = async (req, res) => {
@@ -25,7 +18,7 @@ const login = async (req, res) => {
     return res.status(401).json({ error: 'Credenciales incorrectas' });
   }
 
-  const overrideHash = getAdminPassword();
+  const overrideHash = await getAdminPasswordHash();
   const passwordOk = overrideHash
     ? await bcrypt.compare(password, overrideHash)
     : password === validPass;
@@ -52,7 +45,7 @@ const changeAdminPassword = async (req, res) => {
   }
 
   const validPass = process.env.ADMIN_PASSWORD;
-  const overrideHash = getAdminPassword();
+  const overrideHash = await getAdminPasswordHash();
   const currentOk = overrideHash
     ? await bcrypt.compare(currentPassword, overrideHash)
     : currentPassword === validPass;
@@ -62,7 +55,7 @@ const changeAdminPassword = async (req, res) => {
   }
 
   const newHash = await bcrypt.hash(newPassword, 10);
-  fs.writeFileSync(OVERRIDE_FILE, JSON.stringify({ passwordHash: newHash }), { mode: 0o600 });
+  await Config.upsert({ key: ADMIN_PASS_KEY, value: newHash });
   res.json({ ok: true });
 };
 

@@ -84,7 +84,7 @@ export default function BookForm({ book, onSubmit, onCancel, loading, onFormChan
     e.preventDefault();
     if (!form.titulo.trim()) return setError('El título es obligatorio');
     if (!form.precio || isNaN(Number(form.precio))) return setError('Ingresá un precio válido');
-    onSubmit({ ...form, precio: Number(form.precio) });
+    onSubmit({ ...form, precio: Number(form.precio), paginas: form.paginas ? Number(form.paginas) : null });
   };
 
   return (
@@ -179,10 +179,15 @@ export default function BookForm({ book, onSubmit, onCancel, loading, onFormChan
           <label className={labelClass}>Número de páginas</label>
           <input
             name="paginas"
-            type="number"
-            min="1"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={form.paginas}
-            onChange={handleChange}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, '');
+              setForm((f) => ({ ...f, paginas: v }));
+              onFormChange?.();
+            }}
             className={`${inputClass} font-headline text-xl`}
             placeholder="320"
           />

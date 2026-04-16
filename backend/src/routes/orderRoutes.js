@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const { createOrder, handleWebhook, getAdminOrders, getMyOrders, updateOrderStatus, requestCancellation, handleCancellationRequest, confirmDelivery, downloadDigitalFile } = require('../controllers/orderController');
+const { createOrder, handleWebhook, getAdminOrders, getMyOrders, updateOrderStatus, requestCancellation, handleCancellationRequest, confirmDelivery, downloadDigitalFile, deleteOrder } = require('../controllers/orderController');
 const { verifyToken } = require('../middleware/authMiddleware');
 const { verifyUserToken } = require('../middleware/userAuthMiddleware');
 
@@ -20,6 +20,7 @@ router.post('/webhook', handleWebhook);
 router.get('/', verifyToken, getAdminOrders);
 router.post('/', verifyUserToken, createOrder);
 router.get('/my', verifyUserToken, getMyOrders);
+router.delete('/:id', verifyToken, deleteOrder);
 router.patch('/:id/status', verifyToken, updateOrderStatus);
 router.patch('/:id/cancel-decision', verifyToken, handleCancellationRequest);
 router.post('/:id/request-cancel', verifyUserToken, requestCancellation);

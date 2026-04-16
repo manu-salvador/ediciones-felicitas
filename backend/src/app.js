@@ -36,6 +36,8 @@ const sequelize = require('./config/database');
 
 require('./models/Book');
 require('./models/User');
+require('./models/Config');
+require('./models/Publicacion');
 
 const Order = require('./models/Order');
 const OrderItem = require('./models/OrderItem');
@@ -47,6 +49,7 @@ const authRoutes = require('./routes/authRoutes');
 const userAuthRoutes = require('./routes/userAuthRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const publicacionRoutes = require('./routes/publicacionRoutes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -125,6 +128,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userAuthRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/publicaciones', publicacionRoutes);
 
 app.get('/', (req, res) => res.send('Ediciones Felicitas API is running'));
 
