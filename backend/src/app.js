@@ -50,6 +50,7 @@ const userAuthRoutes = require('./routes/userAuthRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const publicacionRoutes = require('./routes/publicacionRoutes');
+const configRoutes = require('./routes/configRoutes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -129,6 +130,7 @@ app.use('/api/users', userAuthRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/publicaciones', publicacionRoutes);
+app.use('/api/config', configRoutes);
 
 app.get('/', (req, res) => res.send('Ediciones Felicitas API is running'));
 

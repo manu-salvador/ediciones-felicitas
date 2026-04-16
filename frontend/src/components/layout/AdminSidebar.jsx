@@ -47,6 +47,41 @@ export default function AdminSidebar({ open, onClose }) {
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
 
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [shippingCost, setShippingCost] = useState('');
+  const [configLoading, setConfigLoading] = useState(false);
+  const [configError, setConfigError] = useState('');
+  const [configSuccess, setConfigSuccess] = useState(false);
+
+  const openConfigModal = async () => {
+    setConfigError('');
+    setConfigSuccess(false);
+    try {
+      const res = await api.get('/config/shipping');
+      setShippingCost(String(res.data.shippingCost));
+    } catch {
+      setShippingCost('0');
+    }
+    setShowConfigModal(true);
+  };
+
+  const handleConfigSubmit = async (e) => {
+    e.preventDefault();
+    setConfigError('');
+    const cost = Number(shippingCost);
+    if (isNaN(cost) || cost < 0) { setConfigError('Ingresá un número válido (0 = envío gratis)'); return; }
+    setConfigLoading(true);
+    try {
+      await api.patch('/config/shipping', { shippingCost: cost });
+      setConfigSuccess(true);
+      setTimeout(() => { setConfigSuccess(false); setShowConfigModal(false); }, 1500);
+    } catch (err) {
+      setConfigError(err.response?.data?.error || 'Error al guardar');
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+
   // Lock body scroll when sidebar is open on mobile (only <lg breakpoint)
   useEffect(() => {
     const isLargeScreen = window.matchMedia('(min-width: 1024px)').matches;
@@ -154,6 +189,15 @@ export default function AdminSidebar({ open, onClose }) {
             </svg>
             <span className="text-xs uppercase tracking-widest font-medium">Contraseña</span>
           </button>
+          <button
+            onClick={openConfigModal}
+            className="w-full flex items-center gap-3 text-on-surface-variant p-3 hover:bg-surface-high rounded-r-full hover:translate-x-1 transition-transform duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span className="text-xs uppercase tracking-widest font-medium">Configuración</span>
+          </button>
         </nav>
 
         {/* Bottom */}
@@ -169,6 +213,44 @@ export default function AdminSidebar({ open, onClose }) {
           </button>
         </div>
       </aside>
+
+      {/* Shipping config modal */}
+      {showConfigModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-xs p-6">
+            <h3 className="font-headline font-bold text-on-surface mb-1">Tarifa de envío</h3>
+            <p className="text-xs text-on-surface-variant mb-4">0 = envío gratis (ej. retiro en mano o digital)</p>
+            {configSuccess ? (
+              <p className="text-green-600 text-sm font-medium text-center py-4">¡Tarifa actualizada!</p>
+            ) : (
+              <form onSubmit={handleConfigSubmit} className="space-y-3">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={shippingCost}
+                    onChange={(e) => setShippingCost(e.target.value)}
+                    className="w-full border border-outline-variant rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="0"
+                    required
+                  />
+                </div>
+                {configError && <p className="text-error text-xs">{configError}</p>}
+                <div className="flex gap-2 pt-1">
+                  <button type="submit" disabled={configLoading} className="flex-1 bg-primary text-on-primary py-2 rounded-full text-xs font-bold disabled:opacity-50">
+                    {configLoading ? 'Guardando…' : 'Guardar'}
+                  </button>
+                  <button type="button" onClick={() => { setShowConfigModal(false); setConfigError(''); }} className="flex-1 border border-outline-variant text-on-surface-variant py-2 rounded-full text-xs font-bold">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Password change modal — fuera del aside para evitar z-index issues */}
       {showPwModal && (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import { useCart } from '../context/CartContext';
@@ -221,9 +221,20 @@ export default function CartPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [pendingAddress, setPendingAddress] = useState(null);
+  const [shippingCost, setShippingCost] = useState(0);
 
   // Verdadero si TODOS los items del carrito son edición digital
   const isAllDigital = items.length > 0 && items.every((i) => i.edicion === 'digital');
+
+  // Envío gratis para pedidos 100% digitales
+  const effectiveShipping = isAllDigital ? 0 : shippingCost;
+  const grandTotal = totalPrice + effectiveShipping;
+
+  useEffect(() => {
+    api.get('/config/shipping')
+      .then((res) => setShippingCost(res.data.shippingCost || 0))
+      .catch(() => {});
+  }, []);
 
   const handleCheckoutClick = () => {
     if (!isLoggedIn) { setShowRegisterModal(true); return; }
@@ -261,6 +272,7 @@ export default function CartPage() {
         nombreComprador: user.nombre,
         emailComprador: user.email,
         telefonoComprador: user.telefono || '',
+        costoEnvio: effectiveShipping,
       };
       const { data } = await api.post('/orders', payload);
       // Cart is cleared on PaymentSuccessPage after confirmed payment
@@ -333,7 +345,7 @@ export default function CartPage() {
       {showCheckoutModal && (
         <ConfirmModal
           title="Confirmar compra"
-          message={`Estás a punto de finalizar tu pedido por ${formatPeso(totalPrice)}. ¿Continuás con el pago?`}
+          message={`Estás a punto de finalizar tu pedido por ${formatPeso(grandTotal)}. ¿Continuás con el pago?`}
           confirmLabel="Continuar al pago"
           confirmClass="bg-primary text-on-primary hover:shadow-lg hover:shadow-primary/20"
           onConfirm={handleFinalizeCheckout}
@@ -420,13 +432,15 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between text-on-surface-variant text-sm">
                     <span>Envío</span>
-                    <span className="text-xs uppercase tracking-tight">Calculado al pagar</span>
+                    <span className={effectiveShipping === 0 ? 'text-xs uppercase tracking-tight text-green-600 font-medium' : 'font-medium'}>
+                      {effectiveShipping === 0 ? 'Gratis' : formatPeso(effectiveShipping)}
+                    </span>
                   </div>
                 </div>
                 <div className="flex justify-between items-baseline mb-8 pt-4 border-t border-outline-variant/20">
                   <span className="text-lg font-medium">Total</span>
                   <div className="text-right">
-                    <span className="text-3xl font-headline text-primary block leading-none">{formatPeso(totalPrice)}</span>
+                    <span className="text-3xl font-headline text-primary block leading-none">{formatPeso(grandTotal)}</span>
                     <span className="text-[10px] text-on-surface-variant uppercase tracking-widest">IVA incluido</span>
                   </div>
                 </div>

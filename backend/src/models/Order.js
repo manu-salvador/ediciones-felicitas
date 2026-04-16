@@ -7,6 +7,7 @@ const Order = sequelize.define('Order', {
     defaultValue: 'pending',
   },
   total: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+  costoEnvio: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
   mpPreferenceId: { type: DataTypes.STRING, allowNull: true },
   mpPaymentId: { type: DataTypes.STRING, allowNull: true },
   tipoEntrega: { type: DataTypes.STRING, allowNull: false }, // 'fisico','digital','mixto'

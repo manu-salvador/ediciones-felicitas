@@ -6,6 +6,7 @@ const OrderItem = require('../models/OrderItem');
 const Book = require('../models/Book');
 const { Op } = require('sequelize');
 const sequelize = require('../config/database');
+const { sendOrderConfirmation } = require('../services/emailService');
 
 /**
  * Verifica la firma del webhook de MercadoPago.
@@ -52,7 +53,8 @@ const getMpClient = () => new MercadoPagoConfig({
 // POST /api/orders — create order + MP preference (user must be logged in)
 const createOrder = async (req, res) => {
   try {
-    const { items, direccionEnvio, nombreComprador, emailComprador, telefonoComprador } = req.body;
+    const { items, direccionEnvio, nombreComprador, emailComprador, telefonoComprador, costoEnvio: rawCostoEnvio } = req.body;
+    const costoEnvio = Number(rawCostoEnvio) || 0;
     const userId = req.user?.id || null;
 
     if (!items?.length) return res.status(400).json({ error: 'El carrito está vacío' });
@@ -67,11 +69,13 @@ const createOrder = async (req, res) => {
 
     const types = [...new Set(items.map(i => i.edicion))];
     const tipoEntrega = types.length > 1 ? 'mixto' : types[0];
-    const total = items.reduce((sum, i) => sum + Number(i.precio) * i.qty, 0);
+    const subtotal = items.reduce((sum, i) => sum + Number(i.precio) * i.qty, 0);
+    const total = subtotal + costoEnvio;
 
     const order = await Order.create({
       status: 'pending',
       total,
+      costoEnvio,
       tipoEntrega,
       direccionEnvio: tipoEntrega !== 'digital' ? (direccionEnvio || null) : null,
       nombreComprador,
@@ -108,15 +112,20 @@ const createOrder = async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
 
+    const mpItems = items.map(i => ({
+      id: String(i.bookId),
+      title: i.titulo,
+      quantity: Number(i.qty),
+      unit_price: Number(i.precio),
+      currency_id: 'ARS',
+    }));
+    if (costoEnvio > 0) {
+      mpItems.push({ id: 'envio', title: 'Envío', quantity: 1, unit_price: costoEnvio, currency_id: 'ARS' });
+    }
+
     const preference = await preferenceClient.create({
       body: {
-        items: items.map(i => ({
-          id: String(i.bookId),
-          title: i.titulo,
-          quantity: Number(i.qty),
-          unit_price: Number(i.precio),
-          currency_id: 'ARS',
-        })),
+        items: mpItems,
         payer: {
           name: nombreComprador,
           email: emailComprador.toLowerCase(),
@@ -194,6 +203,7 @@ const handleWebhook = async (req, res) => {
           await book.update({ stock: newStock }, { transaction: t });
         }
       });
+      sendOrderConfirmation(order); // fire-and-forget
     }
 
     res.sendStatus(200);
@@ -258,6 +268,7 @@ const updateOrderStatus = async (req, res) => {
           await book.update({ stock: newStock }, { transaction: t });
         }
       });
+      sendOrderConfirmation(order); // fire-and-forget
     }
 
     res.json(order);
