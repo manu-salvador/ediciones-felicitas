@@ -1,6 +1,12 @@
 const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy init — no instanciar si no hay API key (evita crash al arrancar sin la variable)
+let _resend = null;
+const getResend = () => {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+};
 
 // PENDIENTE: reemplazar con datos reales del cliente
 const CONTACTO_EMAIL = 'info@edicionesfelicitas.com.ar';
@@ -102,7 +108,8 @@ const buildOrderConfirmationHtml = (order) => {
 };
 
 const sendOrderConfirmation = async (order) => {
-  if (!process.env.RESEND_API_KEY) {
+  const resend = getResend();
+  if (!resend) {
     console.log('[email] RESEND_API_KEY no configurado — email omitido');
     return;
   }
