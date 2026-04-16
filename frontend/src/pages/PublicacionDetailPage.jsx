@@ -50,17 +50,20 @@ function MarkdownText({ text }) {
 
 // Renderiza negrita e itálica dentro de una línea
 function renderInline(text) {
+  if (!text) return text;
+  // Solo matchea pares completos con contenido no vacío
+  const regex = /\*\*([^*]+)\*\*|_([^_]+)_/g;
   const parts = [];
-  const regex = /(\*\*(.+?)\*\*|_(.+?)_|\*(.+?)\*)/g;
   let last = 0;
   let match;
   let key = 0;
+  let iterations = 0;
 
   while ((match = regex.exec(text)) !== null) {
+    if (++iterations > 1000) break; // safety valve
     if (match.index > last) parts.push(<span key={key++}>{text.slice(last, match.index)}</span>);
-    if (match[2]) parts.push(<strong key={key++} className="font-bold">{match[2]}</strong>);
-    else if (match[3]) parts.push(<em key={key++} className="italic">{match[3]}</em>);
-    else if (match[4]) parts.push(<em key={key++} className="italic">{match[4]}</em>);
+    if (match[1]) parts.push(<strong key={key++} className="font-bold">{match[1]}</strong>);
+    else if (match[2]) parts.push(<em key={key++} className="italic">{match[2]}</em>);
     last = match.index + match[0].length;
   }
   if (last < text.length) parts.push(<span key={key++}>{text.slice(last)}</span>);
