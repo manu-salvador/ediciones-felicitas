@@ -35,6 +35,7 @@ const buildOrderConfirmationHtml = (order) => {
        </tr>`
     : '';
 
+  // Solo mostrar dirección si hay items físicos
   const envioHtml = order.direccionEnvio
     ? `<p style="margin:16px 0 0;font-size:14px;color:#555;">
         <strong>Dirección de envío:</strong> ${order.direccionEnvio}<br>
@@ -42,7 +43,7 @@ const buildOrderConfirmationHtml = (order) => {
         <a href="mailto:${CONTACTO_EMAIL}" style="color:#8B5E3C;">${CONTACTO_EMAIL}</a>
         o al <strong>${CONTACTO_TEL}</strong>.
       </p>`
-    : `<p style="margin:16px 0 0;font-size:14px;color:#555;">Tu edición digital estará disponible para descargar desde tu cuenta.</p>`;
+    : '';
 
   return `
     <!DOCTYPE html>
