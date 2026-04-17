@@ -87,6 +87,30 @@ function OrdersSection({ userToken }) {
     }
   };
 
+  const [downloadingItem, setDownloadingItem] = useState(null);
+
+  const handleDownload = async (orderId, itemId, titulo) => {
+    setDownloadingItem(itemId);
+    try {
+      const response = await api.get(`/orders/${orderId}/download/${itemId}`, {
+        ...authHeaders,
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${titulo}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('Error al descargar el archivo. Intentá de nuevo.');
+    } finally {
+      setDownloadingItem(null);
+    }
+  };
+
   if (ordersLoading) {
     return (
       <div className="flex justify-center py-16">
@@ -176,12 +200,16 @@ function OrdersSection({ userToken }) {
                       <td className="py-1.5 text-right text-on-surface">{item.qty}</td>
                       <td className="py-1.5 text-right">
                         {item.edicion === 'digital' && item.archivoDigital && ['approved','delivered'].includes(order.status) && (
-                          <a href={item.archivoDigital} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary font-bold hover:underline">
+                          <button
+                            onClick={() => handleDownload(order.id, item.id, item.titulo)}
+                            disabled={downloadingItem === item.id}
+                            className="inline-flex items-center gap-1 text-primary font-bold hover:underline disabled:opacity-50"
+                          >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
-                            Descargar
-                          </a>
+                            {downloadingItem === item.id ? 'Descargando…' : 'Descargar'}
+                          </button>
                         )}
                         {item.edicion === 'digital' && item.archivoDigital && !['approved','delivered'].includes(order.status) && (
                           <span className="text-on-surface-variant/50 text-[10px]">Disponible al confirmar pago</span>
