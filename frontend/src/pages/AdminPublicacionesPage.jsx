@@ -106,7 +106,7 @@ function PublicacionForm({ pub, onSubmit, onCancel, loading }) {
         <label className={labelClass}>Título *</label>
         <input
           value={form.titulo}
-          onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
+          onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value.replace(/[<>]/g, '') }))}
           maxLength={200}
           className={inputClass}
           placeholder="Título de la publicación"

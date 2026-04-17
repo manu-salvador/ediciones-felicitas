@@ -332,7 +332,7 @@ function ProfileSection({ user, onSave }) {
     setForm(f => ({ ...f, telefono: val.slice(0, 25) }));
   };
   const handleEmailChange = (e) => {
-    setForm(f => ({ ...f, email: e.target.value.slice(0, 100) }));
+    setForm(f => ({ ...f, email: e.target.value.replace(/[<>]/g, '').slice(0, 100) }));
   };
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -565,16 +565,16 @@ function SecuritySection({ onChangePassword, onDeleteAccount }) {
         <h3 className="text-base font-bold text-on-surface">Cambiar contraseña</h3>
         <div>
           <label className={labelClass}>Contraseña actual</label>
-          <input type="password" value={pwForm.current} onChange={(e) => setPwForm(f => ({ ...f, current: e.target.value }))} className={inputClass} maxLength={100} required />
+          <input type="password" value={pwForm.current} onChange={(e) => setPwForm(f => ({ ...f, current: e.target.value.replace(/[<>]/g, '') }))} className={inputClass} maxLength={100} required />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label className={labelClass}>Nueva contraseña</label>
-            <input type="password" value={pwForm.next} onChange={(e) => setPwForm(f => ({ ...f, next: e.target.value }))} className={inputClass} maxLength={100} minLength={6} required />
+            <input type="password" value={pwForm.next} onChange={(e) => setPwForm(f => ({ ...f, next: e.target.value.replace(/[<>]/g, '') }))} className={inputClass} maxLength={100} minLength={6} required />
           </div>
           <div>
             <label className={labelClass}>Confirmar nueva</label>
-            <input type="password" value={pwForm.confirm} onChange={(e) => setPwForm(f => ({ ...f, confirm: e.target.value }))} className={inputClass} maxLength={100} required />
+            <input type="password" value={pwForm.confirm} onChange={(e) => setPwForm(f => ({ ...f, confirm: e.target.value.replace(/[<>]/g, '') }))} className={inputClass} maxLength={100} required />
           </div>
         </div>
         {pwError && <p className="text-error text-sm">{pwError}</p>}
@@ -596,7 +596,7 @@ function SecuritySection({ onChangePassword, onDeleteAccount }) {
         ) : (
           <div className="space-y-4 bg-error/5 border border-error/20 rounded-xl p-6">
             <p className="text-sm font-medium text-on-surface">Ingresá tu contraseña para confirmar:</p>
-            <input type="password" value={deletePass} onChange={(e) => setDeletePass(e.target.value)} className={inputClass} placeholder="Tu contraseña" maxLength={100} />
+            <input type="password" value={deletePass} onChange={(e) => setDeletePass(e.target.value.replace(/[<>]/g, ''))} className={inputClass} placeholder="Tu contraseña" maxLength={100} />
             {delError && <p className="text-error text-sm">{delError}</p>}
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteConfirm(false)} className="px-6 py-3 text-sm font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors">

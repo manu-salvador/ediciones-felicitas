@@ -161,7 +161,7 @@ export default function AdminBooksPage({ openForm: openFormProp = false }) {
         <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value.replace(/[<>]/g, ''))}
           placeholder="Buscar por título o autor…"
           className="w-full pl-10 pr-4 py-2.5 border border-outline-variant rounded-full text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
         />

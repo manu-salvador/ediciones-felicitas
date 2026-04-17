@@ -261,9 +261,9 @@ export default function AdminSidebar({ open, onClose }) {
               <p className="text-green-600 text-sm font-medium text-center py-4">¡Contraseña actualizada!</p>
             ) : (
               <form onSubmit={handlePwSubmit} className="space-y-3">
-                <input type="password" placeholder="Contraseña actual" value={pwForm.current} onChange={(e) => setPwForm(f => ({...f, current: e.target.value}))} className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" required />
-                <input type="password" placeholder="Nueva contraseña" value={pwForm.next} onChange={(e) => setPwForm(f => ({...f, next: e.target.value}))} className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" minLength={6} required />
-                <input type="password" placeholder="Confirmar nueva contraseña" value={pwForm.confirm} onChange={(e) => setPwForm(f => ({...f, confirm: e.target.value}))} className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" required />
+                <input type="password" placeholder="Contraseña actual" value={pwForm.current} onChange={(e) => setPwForm(f => ({...f, current: e.target.value.replace(/[<>]/g, '')}))} className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" required />
+                <input type="password" placeholder="Nueva contraseña" value={pwForm.next} onChange={(e) => setPwForm(f => ({...f, next: e.target.value.replace(/[<>]/g, '')}))} className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" minLength={6} required />
+                <input type="password" placeholder="Confirmar nueva contraseña" value={pwForm.confirm} onChange={(e) => setPwForm(f => ({...f, confirm: e.target.value.replace(/[<>]/g, '')}))} className="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" required />
                 {pwError && <p className="text-error text-xs">{pwError}</p>}
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={pwLoading} className="flex-1 bg-primary text-on-primary py-2 rounded-full text-xs font-bold disabled:opacity-50">{pwLoading ? 'Guardando…' : 'Guardar'}</button>
