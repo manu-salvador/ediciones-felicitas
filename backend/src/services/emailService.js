@@ -8,9 +8,8 @@ const getResend = () => {
   return _resend;
 };
 
-// PENDIENTE: reemplazar con datos reales del cliente
-const CONTACTO_EMAIL = 'info@edicionesfelicitas.com.ar';
-const CONTACTO_TEL   = '+54 9 XXX XXX-XXXX';
+const CONTACTO_EMAIL  = 'manuu.salvador@hotmail.com';
+const CONTACTO_EMAIL2 = 'anamcabrera23@gmail.com';
 
 const formatPeso = (n) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(Number(n));
@@ -41,7 +40,7 @@ const buildOrderConfirmationHtml = (order) => {
         <strong>Dirección de envío:</strong> ${order.direccionEnvio}<br>
         Si necesitás cambiar la dirección o avisarnos algo, contactanos a
         <a href="mailto:${CONTACTO_EMAIL}" style="color:#8B5E3C;">${CONTACTO_EMAIL}</a>
-        o al <strong>${CONTACTO_TEL}</strong>.
+        o a <a href="mailto:${CONTACTO_EMAIL2}" style="color:#8B5E3C;">${CONTACTO_EMAIL2}</a>.
       </p>`
     : '';
 
@@ -110,7 +109,7 @@ const buildOrderConfirmationHtml = (order) => {
             <!-- Footer -->
             <tr><td style="background:#f7f3ee;padding:20px 40px;text-align:center;">
               <p style="margin:0;font-size:11px;color:#aaa;font-family:Arial,sans-serif;">
-                ${CONTACTO_EMAIL} · ${CONTACTO_TEL}<br>
+                ${CONTACTO_EMAIL} · ${CONTACTO_EMAIL2}<br>
                 <a href="https://www.edicionesfelicitas.com.ar" style="color:#8B5E3C;">edicionesfelicitas.com.ar</a>
               </p>
             </td></tr>
