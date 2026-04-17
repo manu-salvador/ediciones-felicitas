@@ -16,6 +16,9 @@ const formatPeso = (n) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(Number(n));
 
 const buildOrderConfirmationHtml = (order) => {
+  const hasDigital = order.OrderItems.some((i) => i.edicion === 'digital');
+  const frontendUrl = process.env.FRONTEND_URL || 'https://www.edicionesfelicitas.com.ar';
+
   const itemsHtml = order.OrderItems.map((item) => `
     <tr>
       <td style="padding:8px 0;border-bottom:1px solid #f0ebe4;">${item.titulo}${item.autor ? ` — ${item.autor}` : ''}</td>
@@ -83,6 +86,18 @@ const buildOrderConfirmationHtml = (order) => {
               </table>
 
               ${envioHtml}
+
+              ${hasDigital ? `
+              <div style="margin:24px 0;padding:20px 24px;background:#f7f3ee;border-left:3px solid #8B5E3C;border-radius:0 8px 8px 0;">
+                <p style="margin:0 0 8px;font-size:14px;font-weight:bold;color:#2c1a0e;font-family:Arial,sans-serif;">Descarga tu edición digital</p>
+                <p style="margin:0 0 12px;font-size:13px;color:#555;line-height:1.5;font-family:Arial,sans-serif;">
+                  Ingresá a tu cuenta para descargar tus libros digitales. El enlace estará disponible en <strong>Mis Pedidos</strong>.
+                </p>
+                <a href="${frontendUrl}/mis-pedidos"
+                   style="display:inline-block;background:#2c1a0e;color:#ffffff;padding:10px 20px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;font-family:Arial,sans-serif;">
+                  Ir a Mis Pedidos
+                </a>
+              </div>` : ''}
 
               <hr style="border:none;border-top:1px solid #f0ebe4;margin:32px 0;">
               <p style="margin:0;font-size:14px;color:#888;line-height:1.6;font-family:Arial,sans-serif;">

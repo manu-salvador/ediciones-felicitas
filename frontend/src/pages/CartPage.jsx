@@ -138,7 +138,7 @@ function AddressModal({ user, isAllDigital, onConfirm, onCancel }) {
 
         {isAllDigital ? (
           <p className="text-sm text-on-surface-variant mb-6">
-            Estás comprando una edición digital. El enlace de descarga se enviará a <strong>{user?.email}</strong>.
+            Estás comprando una edición digital. Una vez confirmado el pago, podrás descargarla desde <strong>Mis Pedidos</strong> en tu cuenta.
           </p>
         ) : savedAddress && !useNew ? (
           <div className="mb-4">
