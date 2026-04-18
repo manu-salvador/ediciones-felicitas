@@ -82,11 +82,11 @@ router.post('/calcular', shippingLimiter, async (req, res) => {
           });
           if (!book) continue;
 
-          // Valores por defecto si el admin aún no cargó las dimensiones
-          const peso  = book.peso  || 350;   // gramos
-          const alto  = book.alto  || 3;     // cm
+          // Valores por defecto del cliente (si el admin no cargó dimensiones específicas)
+          const peso  = book.peso  || 300;   // gramos
+          const alto  = book.alto  || 23;    // cm
           const ancho = book.ancho || 14;    // cm
-          const largo = book.largo || 20;    // cm
+          const largo = book.largo || 3;     // cm (grosor)
 
           // Repetir el bulto según cantidad
           for (let i = 0; i < Number(item.qty); i++) {
