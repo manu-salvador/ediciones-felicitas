@@ -7,7 +7,7 @@ const EMPTY = { titulo: '', isbn: '', precio: '', autor: '', categoria: '', imag
 const CATEGORIAS = [
   'Narrativa', 'Poesía', 'Historia', 'Biografía',
   'Infantil', 'Ensayo', 'Filosofía', 'Arte & Diseño',
-  'Novela histórica', 'Agronomía/Literatura', 'Historia Antigua', 'Ensayo Histórico',
+  'Novela histórica', 'Agronomía/Literatura', 'Historia Antigua', 'Ensayo Histórico', 'Literatura Argentina',
   'Otro',
 ];
 
