@@ -62,10 +62,11 @@ const getBookBySlug = async (req, res) => {
 
 const createBook = async (req, res) => {
   try {
-    const { titulo, isbn, precio, autor, categoria, imagen, tieneDigital, archivoDigital, stock } = req.body;
+    const { titulo, isbn, precio, autor, categoria, imagen, tieneDigital, archivoDigital, stock, paginas } = req.body;
     if (!titulo || !precio) return res.status(400).json({ error: 'Título y precio son obligatorios' });
     const slug = await generateUniqueSlug(titulo);
-    const book = await Book.create({ titulo, isbn, precio, autor, categoria, imagen, tieneDigital, archivoDigital, slug, stock: stock ?? 0 });
+    const paginasVal = paginas === '' || paginas === undefined ? null : Number(paginas);
+    const book = await Book.create({ titulo, isbn, precio, autor, categoria, imagen, tieneDigital, archivoDigital, slug, stock: stock ?? 0, paginas: paginasVal });
     res.status(201).json(book);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
