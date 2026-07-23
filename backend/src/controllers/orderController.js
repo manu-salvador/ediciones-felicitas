@@ -118,31 +118,40 @@ const createOrder = async (req, res) => {
       id: String(i.bookId),
       title: i.titulo,
       quantity: Number(i.qty),
-      unit_price: Number(i.precio),
+      unit_price: Math.round(Number(i.precio)),
       currency_id: 'ARS',
     }));
     if (costoEnvio > 0) {
-      mpItems.push({ id: 'envio', title: 'Envío', quantity: 1, unit_price: costoEnvio, currency_id: 'ARS' });
+      mpItems.push({ id: 'envio', title: 'Envío', quantity: 1, unit_price: Math.round(costoEnvio), currency_id: 'ARS' });
     }
 
-    const preference = await preferenceClient.create({
-      body: {
-        items: mpItems,
-        payer: {
-          name: nombreComprador,
-          email: emailComprador.toLowerCase(),
+    let preference;
+    try {
+      preference = await preferenceClient.create({
+        body: {
+          items: mpItems,
+          payer: {
+            name: nombreComprador,
+            email: emailComprador.toLowerCase(),
+          },
+          back_urls: {
+            success: `${frontendUrl}/pago/exitoso`,
+            failure: `${frontendUrl}/pago/fallido`,
+            pending: `${frontendUrl}/pago/pendiente`,
+          },
+          auto_return: 'approved',
+          notification_url: `${backendUrl}/api/orders/webhook`,
+          external_reference: `ORDER-${order.id}`,
+          statement_descriptor: 'Ediciones Felicitas',
         },
-        back_urls: {
-          success: `${frontendUrl}/pago/exitoso`,
-          failure: `${frontendUrl}/pago/fallido`,
-          pending: `${frontendUrl}/pago/pendiente`,
-        },
-        auto_return: 'approved',
-        notification_url: `${backendUrl}/api/orders/webhook`,
-        external_reference: `ORDER-${order.id}`,
-        statement_descriptor: 'Ediciones Felicitas',
-      },
-    });
+      });
+    } catch (mpErr) {
+      console.error('[createOrder] MP preference error — status:', mpErr?.status);
+      console.error('[createOrder] MP preference error — message:', mpErr?.message);
+      console.error('[createOrder] MP preference error — cause:', JSON.stringify(mpErr?.cause ?? mpErr?.response?.data ?? mpErr, null, 2));
+      await order.destroy();
+      return res.status(502).json({ error: 'Error al crear la preferencia de pago. Intentá de nuevo.' });
+    }
 
     await order.update({ mpPreferenceId: preference.id });
 
@@ -153,7 +162,7 @@ const createOrder = async (req, res) => {
       sandboxInitPoint: preference.sandbox_init_point,
     });
   } catch (err) {
-    console.error('createOrder error:', err);
+    console.error('[createOrder] Unexpected error:', err?.message ?? err);
     res.status(500).json({ error: 'Error al procesar el pedido' });
   }
 };
