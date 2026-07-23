@@ -10,9 +10,6 @@ const register = async (req, res) => {
     if (!nombre || !email || !password) {
       return res.status(400).json({ error: 'Nombre, email y contraseña son obligatorios' });
     }
-    if (!calle || !numero || !ciudad) {
-      return res.status(400).json({ error: 'Calle, número y ciudad son obligatorios' });
-    }
     if (password.length < 6) {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
     }

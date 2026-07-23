@@ -111,8 +111,8 @@ const createOrder = async (req, res) => {
     const client = getMpClient();
     const preferenceClient = new Preference(client);
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const backendUrl = (process.env.BACKEND_URL || 'http://localhost:3001').replace(/\/$/, '');
 
     const mpItems = items.map(i => ({
       id: String(i.bookId),
@@ -149,8 +149,9 @@ const createOrder = async (req, res) => {
       console.error('[createOrder] MP preference error — status:', mpErr?.status);
       console.error('[createOrder] MP preference error — message:', mpErr?.message);
       console.error('[createOrder] MP preference error — cause:', JSON.stringify(mpErr?.cause ?? mpErr?.response?.data ?? mpErr, null, 2));
+      await OrderItem.destroy({ where: { orderId: order.id } });
       await order.destroy();
-      return res.status(502).json({ error: 'Error al crear la preferencia de pago. Intentá de nuevo.' });
+      return res.status(502).json({ error: 'Ocurrió un inconveniente al procesar el pago. Por favor, intentá de nuevo más tarde.' });
     }
 
     await order.update({ mpPreferenceId: preference.id });

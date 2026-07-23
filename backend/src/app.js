@@ -60,9 +60,9 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 // CORS — en producción solo se permite el origen explícito; en dev acepta localhost
-const allowedOrigins = process.env.FRONTEND_URL
+const allowedOrigins = process.env.NODE_ENV === 'production' && process.env.FRONTEND_URL
   ? [process.env.FRONTEND_URL]
-  : ['http://localhost:5173', 'http://localhost:4173'];
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:4173', process.env.FRONTEND_URL].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {

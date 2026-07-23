@@ -10,8 +10,8 @@ const labelClass = 'block text-[0.625rem] font-bold uppercase tracking-widest te
 const formatPeso = (n) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
 
-const CONTACT_PHONE = '+54 9 11 0000-0000'; // reemplazar con el teléfono real del cliente
-const CONTACT_EMAIL = 'contacto@edicionesfelicitas.com.ar'; // reemplazar con el email real
+const CONTACT_EMAIL  = 'manuu.salvador@hotmail.com';
+const CONTACT_EMAIL2 = 'anamcabrera23@gmail.com';
 
 const CANCEL_REASON_LABELS = { me_equivoque: 'Me equivoqué', me_arrepenti: 'Me arrepentí' };
 const ADMIN_CANCEL_REASONS = [
@@ -305,9 +305,9 @@ function OrdersSection({ userToken }) {
               {/* Contacto / reclamo */}
               <div className="pt-2 border-t border-outline-variant/20 text-xs text-on-surface-variant">
                 Ante cualquier duda o inconveniente comunicarse a{' '}
-                <a href={`tel:${CONTACT_PHONE}`} className="text-primary hover:underline">{CONTACT_PHONE}</a>
-                {' '}o{' '}
                 <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">{CONTACT_EMAIL}</a>
+                {' '}o{' '}
+                <a href={`mailto:${CONTACT_EMAIL2}`} className="text-primary hover:underline">{CONTACT_EMAIL2}</a>
               </div>
             </div>
           )}
